@@ -1,7 +1,10 @@
 import axios from 'axios';
 
+// In production (FE on Vercel, BE on Railway) set VITE_API_URL to your backend
+// e.g. https://appointbot-be.up.railway.app
+// In dev the Vite proxy forwards /api → localhost:3000, so no env var needed.
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: import.meta.env.VITE_API_URL ? `${import.meta.env.VITE_API_URL}/api` : '/api',
 });
 
 api.interceptors.request.use((config) => {
