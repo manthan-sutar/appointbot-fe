@@ -35,6 +35,33 @@ function toTimeInputValue(iso, tz = 'Asia/Kolkata') {
   return d.toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
+function addDaysToDateInput(dateInputValue, days) {
+  // dateInputValue is "YYYY-MM-DD" (en-CA) so treat it as UTC to avoid timezone shifts
+  const d = new Date(`${dateInputValue}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+function getNowDateAndRoundedTime({ tz, stepMinutes = 30 }) {
+  const now = new Date();
+  const dateStr = now.toLocaleDateString('en-CA', { timeZone: tz });
+  const timeStr = now.toLocaleTimeString('en-GB', {
+    timeZone: tz,
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+  const [hh, mm] = timeStr.split(':').map(Number);
+  let totalMins = (hh * 60) + mm;
+  const rounded = Math.ceil(totalMins / stepMinutes) * stepMinutes;
+  if (rounded >= 24 * 60) {
+    return { date: addDaysToDateInput(dateStr, 1), time: '00:00' };
+  }
+  const rh = String(Math.floor(rounded / 60)).padStart(2, '0');
+  const rm = String(rounded % 60).padStart(2, '0');
+  return { date: dateStr, time: `${rh}:${rm}` };
+}
+
 export default function Appointments() {
   const [view,     setView]     = useState('upcoming');
   const [status,   setStatus]   = useState('');
@@ -49,6 +76,7 @@ export default function Appointments() {
   const [pages,    setPages]    = useState(1);
   const [loading,  setLoading]  = useState(true);
   const [staffList, setStaffList] = useState([]);
+  const [servicesList, setServicesList] = useState([]);
   const [businessTz, setBusinessTz] = useState('Asia/Kolkata');
 
   const [rescheduleTarget, setRescheduleTarget] = useState(null);
@@ -59,12 +87,37 @@ export default function Appointments() {
   const [reschedError, setReschedError] = useState('');
   const [reschedSubmitting, setReschedSubmitting] = useState(false);
 
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createServiceId, setCreateServiceId] = useState('');
+  const [createStaffId, setCreateStaffId] = useState('');
+  const [createDate, setCreateDate] = useState('');
+  const [createTime, setCreateTime] = useState('');
+  const [createCustomerPhone, setCreateCustomerPhone] = useState('');
+  const [createCustomerName, setCreateCustomerName] = useState('');
+  const [createNotes, setCreateNotes] = useState('');
+  const [createSubmitting, setCreateSubmitting] = useState(false);
+  const [createError, setCreateError] = useState('');
+  const [createSuggestedSlots, setCreateSuggestedSlots] = useState([]);
+
   // Load staff for filter dropdown once
   useEffect(() => {
-    Promise.all([api.get('/business'), api.get('/business/staff')]).then(([b, staff]) => {
-      setBusinessTz(b.data.business?.timezone || 'Asia/Kolkata');
-      setStaffList((staff.data.staff || []).filter(s => s.active));
-    });
+    Promise.all([api.get('/business'), api.get('/business/staff'), api.get('/business/services')]).then(
+      ([b, staff, services]) => {
+        const tz = b.data.business?.timezone || 'Asia/Kolkata';
+        setBusinessTz(tz);
+        const activeStaff = (staff.data.staff || []).filter(s => s.active);
+        setStaffList(activeStaff);
+        const activeServices = (services.data.services || []).filter(s => s.active);
+        setServicesList(activeServices);
+
+        // Default selections for manual booking modal
+        const { date, time } = getNowDateAndRoundedTime({ tz, stepMinutes: 30 });
+        setCreateDate(date);
+        setCreateTime(time);
+        setCreateStaffId(activeStaff[0]?.id ? String(activeStaff[0].id) : '');
+        setCreateServiceId(activeServices[0]?.id ? String(activeServices[0].id) : '');
+      },
+    );
   }, []);
 
   const load = useCallback(async () => {
@@ -193,6 +246,66 @@ export default function Appointments() {
     }
   }
 
+  function openCreateAppointment() {
+    // If reschedule modal is open, close it so we don't stack dialogs.
+    closeReschedule();
+    setCreateSuggestedSlots([]);
+    setCreateError('');
+    setCreateCustomerPhone('');
+    setCreateCustomerName('');
+    setCreateNotes('');
+    setCreateSubmitting(false);
+    setCreateOpen(true);
+
+    const { date, time } = getNowDateAndRoundedTime({ tz: businessTz, stepMinutes: 30 });
+    setCreateDate(date);
+    setCreateTime(time);
+    setCreateStaffId((prev) => prev || (staffList[0]?.id ? String(staffList[0].id) : ''));
+    setCreateServiceId((prev) => prev || (servicesList[0]?.id ? String(servicesList[0].id) : ''));
+  }
+
+  function closeCreateAppointment() {
+    setCreateOpen(false);
+    setCreateError('');
+    setCreateSuggestedSlots([]);
+    setCreateSubmitting(false);
+  }
+
+  async function submitManualAppointment() {
+    if (!createStaffId || !createServiceId || !createDate || !createTime || !createCustomerPhone) {
+      setCreateError('Please fill staff, service, date, time, and customer phone.');
+      return;
+    }
+
+    setCreateSubmitting(true);
+    setCreateError('');
+    setCreateSuggestedSlots([]);
+
+    try {
+      await api.post('/business/appointments/manual', {
+        staffId: createStaffId,
+        serviceId: createServiceId,
+        customerPhone: createCustomerPhone,
+        customerName: createCustomerName || null,
+        date: createDate,
+        time: createTime,
+        notes: createNotes || null,
+      });
+      closeCreateAppointment();
+      await load();
+    } catch (err) {
+      const status = err.response?.status;
+      if (status === 409) {
+        setCreateError(err.response?.data?.error || 'That slot is not available');
+        setCreateSuggestedSlots(err.response?.data?.slots || []);
+      } else {
+        setCreateError(err.response?.data?.error || 'Failed to create appointment');
+      }
+    } finally {
+      setCreateSubmitting(false);
+    }
+  }
+
   return (
     <div className="ab-page max-w-[1200px] space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -200,9 +313,14 @@ export default function Appointments() {
           <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">Appointments</h1>
           <p className="mt-0.5 text-sm text-slate-500">{total} {total === 1 ? 'appointment' : 'appointments'} found</p>
         </div>
-        <Button type="button" variant="outline" size="md" className="gap-2" onClick={exportCSV} disabled={!rows.length}>
-          ⬇️ Export CSV
-        </Button>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button type="button" variant="outline" size="md" className="gap-2" onClick={exportCSV} disabled={!rows.length}>
+            ⬇️ Export CSV
+          </Button>
+          <Button type="button" size="md" className="gap-2 rounded-lg bg-emerald-600 font-semibold text-white shadow-sm hover:bg-emerald-700" onClick={openCreateAppointment}>
+            ➕ Add Appointment
+          </Button>
+        </div>
       </div>
 
       <div className="flex w-full min-w-0 gap-1 overflow-x-auto rounded-lg border border-slate-200 bg-slate-100 p-1">
@@ -471,6 +589,172 @@ export default function Appointments() {
                   disabled={reschedSubmitting || !reschedDate || !reschedTime}
                 >
                   {reschedSubmitting ? 'Saving…' : 'Reschedule'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {createOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={closeCreateAppointment}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="w-full max-w-lg rounded-xl bg-white p-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div>
+                <div className="text-sm font-semibold text-slate-900">Manual Appointment Booking</div>
+                <div className="mt-0.5 text-xs text-slate-500">Creates a confirmed record using availability rules.</div>
+              </div>
+              <Button type="button" variant="outline" size="sm" onClick={closeCreateAppointment}>
+                Close
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Service
+                  </label>
+                  <select
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
+                    value={createServiceId}
+                    onChange={(e) => setCreateServiceId(e.target.value)}
+                  >
+                    {servicesList.map((s) => (
+                      <option key={s.id} value={String(s.id)}>
+                        {s.name} ({s.duration_minutes}m)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Staff
+                  </label>
+                  <select
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
+                    value={createStaffId}
+                    onChange={(e) => setCreateStaffId(e.target.value)}
+                  >
+                    {staffList.map((st) => (
+                      <option key={st.id} value={String(st.id)}>
+                        {st.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
+                    value={createDate}
+                    onChange={(e) => setCreateDate(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Time
+                  </label>
+                  <input
+                    type="time"
+                    step={1800}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
+                    value={createTime}
+                    onChange={(e) => setCreateTime(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Customer phone
+                </label>
+                <input
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
+                  value={createCustomerPhone}
+                  onChange={(e) => setCreateCustomerPhone(e.target.value)}
+                  placeholder="+91 98765 43210"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Customer name (optional)
+                </label>
+                <input
+                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
+                  value={createCustomerName}
+                  onChange={(e) => setCreateCustomerName(e.target.value)}
+                  placeholder="e.g. Rahul"
+                />
+              </div>
+
+              <div>
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Notes (optional)
+                </label>
+                <textarea
+                  className="min-h-[80px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
+                  value={createNotes}
+                  onChange={(e) => setCreateNotes(e.target.value)}
+                  placeholder="Any special instructions..."
+                />
+              </div>
+
+              {createError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {createError}
+                </div>
+              )}
+
+              {createSuggestedSlots.length > 0 && (
+                <div>
+                  <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Suggested available times
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {createSuggestedSlots.map((t) => (
+                      <Button
+                        key={t}
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-8 px-2 text-[12px] text-slate-700 hover:bg-slate-50"
+                        onClick={() => setCreateTime(t)}
+                      >
+                        {t}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
+                <Button type="button" variant="outline" onClick={closeCreateAppointment}>
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  className="bg-emerald-600 font-semibold text-white hover:bg-emerald-700"
+                  onClick={submitManualAppointment}
+                  disabled={createSubmitting || !createCustomerPhone}
+                >
+                  {createSubmitting ? 'Saving…' : 'Book Appointment'}
                 </Button>
               </div>
             </div>
