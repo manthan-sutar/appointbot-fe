@@ -16,12 +16,23 @@ const VIEW_TABS = [
   { id: 'range',    label: '🗓️ Date Range' },
 ];
 
-function formatDateTime(iso) {
+function formatDateTime(iso, tz = 'Asia/Kolkata') {
   const d = new Date(iso);
   return {
-    date: d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }),
-    time: d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' }),
+    date: d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric', timeZone: tz }),
+    time: d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: tz }),
   };
+}
+
+function toDateInputValue(iso, tz = 'Asia/Kolkata') {
+  const d = new Date(iso);
+  // en-CA returns YYYY-MM-DD which matches <input type="date">
+  return d.toLocaleDateString('en-CA', { timeZone: tz });
+}
+
+function toTimeInputValue(iso, tz = 'Asia/Kolkata') {
+  const d = new Date(iso);
+  return d.toLocaleTimeString('en-GB', { timeZone: tz, hour: '2-digit', minute: '2-digit', hour12: false });
 }
 
 export default function Appointments() {
@@ -38,10 +49,22 @@ export default function Appointments() {
   const [pages,    setPages]    = useState(1);
   const [loading,  setLoading]  = useState(true);
   const [staffList, setStaffList] = useState([]);
+  const [businessTz, setBusinessTz] = useState('Asia/Kolkata');
+
+  const [rescheduleTarget, setRescheduleTarget] = useState(null);
+  const [reschedDate, setReschedDate] = useState('');
+  const [reschedTime, setReschedTime] = useState('');
+  const [suggestedSlots, setSuggestedSlots] = useState([]);
+  const [slotsLoading, setSlotsLoading] = useState(false);
+  const [reschedError, setReschedError] = useState('');
+  const [reschedSubmitting, setReschedSubmitting] = useState(false);
 
   // Load staff for filter dropdown once
   useEffect(() => {
-    api.get('/business/staff').then(({ data }) => setStaffList(data.staff.filter(s => s.active)));
+    Promise.all([api.get('/business'), api.get('/business/staff')]).then(([b, staff]) => {
+      setBusinessTz(b.data.business?.timezone || 'Asia/Kolkata');
+      setStaffList((staff.data.staff || []).filter(s => s.active));
+    });
   }, []);
 
   const load = useCallback(async () => {
@@ -67,6 +90,28 @@ export default function Appointments() {
 
   useEffect(() => { load(); }, [load]);
 
+  const fetchSlots = useCallback(async (appointmentId, date) => {
+    if (!appointmentId || !date) return;
+    setSlotsLoading(true);
+    try {
+      const { data } = await api.get(`/business/appointments/${appointmentId}/slots`, {
+        params: { date },
+      });
+      setSuggestedSlots(data.curatedSlots || []);
+    } catch (err) {
+      setSuggestedSlots([]);
+      // Non-fatal: if slot suggestions fail (e.g. appointment not confirmed), user can still manual-enter.
+    } finally {
+      setSlotsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (rescheduleTarget?.id && reschedDate) {
+      fetchSlots(rescheduleTarget.id, reschedDate);
+    }
+  }, [rescheduleTarget?.id, reschedDate, fetchSlots]);
+
   // Reset page when filters change
   function applyFilter(setter, val) {
     setter(val);
@@ -86,6 +131,66 @@ export default function Appointments() {
     const a    = document.createElement('a');
     a.href = url; a.download = `appointments-${view}.csv`; a.click();
     URL.revokeObjectURL(url);
+  }
+
+  function openReschedule(appt) {
+    setRescheduleTarget(appt);
+    setReschedError('');
+    setReschedDate(toDateInputValue(appt.scheduled_at, businessTz));
+    setReschedTime(toTimeInputValue(appt.scheduled_at, businessTz));
+    setSuggestedSlots([]);
+  }
+
+  function closeReschedule() {
+    setRescheduleTarget(null);
+    setSuggestedSlots([]);
+    setReschedError('');
+    setReschedSubmitting(false);
+  }
+
+  async function cancelAppointment(apptId) {
+    if (!confirm('Cancel this appointment?')) return;
+    try {
+      await api.post(`/business/appointments/${apptId}/cancel`);
+      await load();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to cancel');
+    }
+  }
+
+  async function completeAppointment(apptId) {
+    if (!confirm('Mark this appointment as completed?')) return;
+    try {
+      await api.post(`/business/appointments/${apptId}/complete`);
+      await load();
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to complete');
+    }
+  }
+
+  async function submitReschedule() {
+    if (!rescheduleTarget?.id) return;
+    setReschedSubmitting(true);
+    setReschedError('');
+    try {
+      await api.post(`/business/appointments/${rescheduleTarget.id}/reschedule`, {
+        date: reschedDate,
+        time: reschedTime,
+      });
+      closeReschedule();
+      await load();
+    } catch (err) {
+      setReschedSubmitting(false);
+      if (err.response?.status === 409) {
+        setReschedError(err.response?.data?.error || 'That slot is not available');
+        // Refresh suggestions for the chosen date.
+        await fetchSlots(rescheduleTarget.id, reschedDate);
+      } else {
+        setReschedError(err.response?.data?.error || 'Failed to reschedule');
+      }
+    } finally {
+      setReschedSubmitting(false);
+    }
   }
 
   return (
@@ -193,14 +298,14 @@ export default function Appointments() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr>
-                    {['Date', 'Time', 'Service', 'Staff', 'Customer', 'Phone', 'Status', 'Ref'].map(h => (
+                    {['Date', 'Time', 'Service', 'Staff', 'Customer', 'Phone', 'Status', 'Ref', 'Actions'].map(h => (
                       <th key={h} className="whitespace-nowrap border-b border-slate-100 bg-slate-50 px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 sm:px-4">{h}</th>
                     ))}
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((r, i) => {
-                    const { date, time } = formatDateTime(r.scheduled_at);
+                    const { date, time } = formatDateTime(r.scheduled_at, businessTz);
                     const sc = STATUS_COLOR[r.status] || { bg: '#f3f4f6', text: '#374151' };
                     return (
                       <tr key={r.id} className={i % 2 !== 0 ? 'bg-slate-50/50' : ''}>
@@ -216,6 +321,41 @@ export default function Appointments() {
                           <span className="inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize" style={{ background: sc.bg, color: sc.text }}>{r.status}</span>
                         </td>
                         <td className="border-b border-slate-50 px-4 py-3 text-xs text-slate-500">#{r.id}</td>
+                        <td className="border-b border-slate-50 px-4 py-3 whitespace-nowrap">
+                          {r.status === 'confirmed' ? (
+                            <div className="flex flex-wrap items-center gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="h-7 border-red-200 bg-white px-2 py-0 text-[12px] text-red-600 hover:bg-red-50"
+                                onClick={() => cancelAppointment(r.id)}
+                              >
+                                Cancel
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="h-7 border-slate-200 bg-white px-2 py-0 text-[12px] text-slate-700 hover:bg-slate-50"
+                                onClick={() => openReschedule(r)}
+                              >
+                                Reschedule
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                className="h-7 border-emerald-200 bg-white px-2 py-0 text-[12px] text-emerald-700 hover:bg-emerald-50"
+                                onClick={() => completeAppointment(r.id)}
+                              >
+                                Done
+                              </Button>
+                            </div>
+                          ) : (
+                            <span className="text-[12px] text-slate-500">—</span>
+                          )}
+                        </td>
                       </tr>
                     );
                   })}
@@ -233,6 +373,110 @@ export default function Appointments() {
           </>
         )}
       </Card>
+
+      {rescheduleTarget && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={closeReschedule}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="w-full max-w-lg rounded-xl bg-white p-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div>
+                <div className="text-sm font-semibold text-slate-900">Reschedule Appointment</div>
+                <div className="mt-0.5 text-xs text-slate-500">Ref #{rescheduleTarget.id}</div>
+              </div>
+              <Button type="button" variant="outline" size="sm" onClick={closeReschedule}>
+                Close
+              </Button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="flex-1 min-w-[180px]">
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    New Date
+                  </label>
+                  <input
+                    type="date"
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
+                    value={reschedDate}
+                    onChange={(e) => setReschedDate(e.target.value)}
+                  />
+                </div>
+                <div className="flex-1 min-w-[140px]">
+                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    New Time
+                  </label>
+                  <input
+                    type="time"
+                    step={1800}
+                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
+                    value={reschedTime}
+                    onChange={(e) => setReschedTime(e.target.value)}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Suggested slots
+                </div>
+                {slotsLoading ? (
+                  <div className="text-sm text-slate-500">Loading slots…</div>
+                ) : suggestedSlots.length ? (
+                  <div className="flex flex-wrap gap-2">
+                    {suggestedSlots.map((t) => (
+                      <Button
+                        key={t}
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        className="h-8 px-2 text-[12px] text-slate-700 hover:bg-slate-50"
+                        onClick={() => setReschedTime(t)}
+                      >
+                        {t}
+                      </Button>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-sm text-slate-500">
+                    No open slots found for this date. You can still try manual entry.
+                  </div>
+                )}
+              </div>
+
+              {reschedError && (
+                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                  {reschedError}
+                </div>
+              )}
+
+              <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={closeReschedule}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  className="bg-emerald-600 font-semibold text-white hover:bg-emerald-700"
+                  onClick={submitReschedule}
+                  disabled={reschedSubmitting || !reschedDate || !reschedTime}
+                >
+                  {reschedSubmitting ? 'Saving…' : 'Reschedule'}
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
