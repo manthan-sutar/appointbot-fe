@@ -1,17 +1,44 @@
+import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import api from '../lib/api';
 import { Button } from '../components/ui/button';
 
 const NAV = [
   { to: '/dashboard/',             label: 'Dashboard',    icon: '📊' },
   { to: '/dashboard/appointments', label: 'Appointments', icon: '📅' },
+  { to: '/dashboard/customers',    label: 'Customers',    icon: '🧾' },
+  { to: '/dashboard/campaigns',    label: 'Campaigns',    icon: '📣' },
   { to: '/dashboard/settings',     label: 'Settings',     icon: '⚙️' },
 ];
+
+function planBadgeLabel(plan) {
+  if (plan === 'business') return 'Business';
+  if (plan === 'pro') return 'Pro';
+  return 'Free';
+}
 
 export default function Layout({ children }) {
   const { owner, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
+  const [planLabel, setPlanLabel] = useState(null);
+
+  useEffect(() => {
+    if (!owner?.businessId) return undefined;
+    let cancelled = false;
+    api
+      .get('/business/plan')
+      .then(({ data }) => {
+        if (!cancelled) setPlanLabel(planBadgeLabel(data?.plan));
+      })
+      .catch(() => {
+        if (!cancelled) setPlanLabel('Free');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [owner?.businessId]);
 
   function handleLogout() {
     logout();
@@ -43,7 +70,7 @@ export default function Layout({ children }) {
               {owner.email?.split('@')[0] || 'My Business'}
             </div>
             <span className="rounded-md bg-slate-700/80 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-slate-200">
-              Free
+              {planLabel === null ? '…' : planLabel}
             </span>
           </div>
         )}

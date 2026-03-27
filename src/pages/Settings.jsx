@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import api from "../lib/api";
 import { cn } from "@/lib/utils";
 import { Button } from "../components/ui/button";
@@ -13,7 +14,9 @@ import { Badge } from "../components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const TABS = ["Business", "Services", "Staff", "Working Hours", "WhatsApp"];
+const TABS = ["Business", "Services", "Staff", "Working Hours", "No-show", "WhatsApp"];
+const TAB_QUERY = ["business", "services", "staff", "hours", "no-show", "whatsapp"];
+const TAB_FROM_QUERY = { business: 0, services: 1, staff: 2, hours: 3, "no-show": 4, whatsapp: 5 };
 
 // Normalize time from API (e.g. "09:00:00" -> "09:00") for time inputs
 function toTimeValue(t) {
@@ -88,7 +91,11 @@ function staffConfigToSlots(config) {
 }
 
 export default function Settings() {
-  const [tab, setTab] = useState(0);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const qTab = searchParams.get("tab");
+  const initialTab =
+    qTab && TAB_FROM_QUERY[qTab] !== undefined ? TAB_FROM_QUERY[qTab] : 0;
+  const [tab, setTab] = useState(initialTab);
   const [business, setBusiness] = useState(null);
   const [subscription, setSubscription] = useState(null);
   const [services, setServices] = useState([]);
@@ -99,9 +106,24 @@ export default function Settings() {
   // "Apply to all days" input values per staff (for Working Hours tab)
   const [applyAllValues, setApplyAllValues] = useState({});
   const [waConfig, setWaConfig] = useState(null);
+  const [bookNowCampaign, setBookNowCampaign] = useState("spring_launch");
+  const [bookNowUtmSource, setBookNowUtmSource] = useState("instagram");
+  const [noShowSettings, setNoShowSettings] = useState(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState("");
+
+  useEffect(() => {
+    const t = searchParams.get("tab");
+    if (t && TAB_FROM_QUERY[t] !== undefined) {
+      setTab(TAB_FROM_QUERY[t]);
+    }
+  }, [searchParams]);
+
+  function selectTab(i) {
+    setTab(i);
+    setSearchParams({ tab: TAB_QUERY[i] }, { replace: true });
+  }
 
   useEffect(() => {
     Promise.all([
@@ -110,14 +132,16 @@ export default function Settings() {
       api.get("/business/staff"),
       api.get("/business/hours"),
       api.get("/business/whatsapp"),
+      api.get("/business/no-show-settings"),
       api.get("/billing/subscription"),
     ])
-      .then(([b, sv, st, h, wa, sub]) => {
+      .then(([b, sv, st, h, wa, ns, sub]) => {
         setBusiness(b.data.business);
         setServices(sv.data.services);
         setStaff(st.data.staff);
         setHours(h.data.hours);
         setWaConfig(wa.data.whatsapp || null);
+        setNoShowSettings(ns.data.noShowSettings || null);
         setSubscription(sub.data.subscription || null);
       })
       .finally(() => setLoading(false));
@@ -334,6 +358,27 @@ export default function Settings() {
     }
   }
 
+  async function saveNoShowSettings(e) {
+    e.preventDefault();
+    if (!noShowSettings) return;
+    setSaving(true);
+    try {
+      const payload = {
+        reminder24hEnabled: !!noShowSettings.reminder_24h_enabled,
+        reminder2hEnabled: !!noShowSettings.reminder_2h_enabled,
+        autoCancelUnconfirmedEnabled: !!noShowSettings.auto_cancel_unconfirmed_enabled,
+        confirmationCutoffMinutes: Number(noShowSettings.confirmation_cutoff_minutes || 90),
+      };
+      const { data } = await api.put("/business/no-show-settings", payload);
+      setNoShowSettings(data.noShowSettings);
+      showToast("No-show settings saved!");
+    } catch (err) {
+      showToast(err.response?.data?.error || "Failed to save no-show settings");
+    } finally {
+      setSaving(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center p-10 text-sm text-slate-500">
@@ -350,6 +395,12 @@ export default function Settings() {
   const currentPlan = subscription?.plan || "free";
   const trialActive = subscription?.trialActive;
   const trialDaysLeft = subscription?.trialDaysLeft || 0;
+  const waPhone = String(waConfig?.displayPhone || business?.phone || "").replace(/[^0-9]/g, "");
+  const bookNowText = `Hi, I want to book an appointment. #src=whatsapp_book_now #cmp=${(bookNowCampaign || "default").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-")} #utm=${(bookNowUtmSource || "unknown").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-")}`;
+  const bookNowLink = waPhone ? `https://wa.me/${waPhone}?text=${encodeURIComponent(bookNowText)}` : "";
+  const widgetScriptTag = business?.slug
+    ? `<script async src="${window.location.origin}/chat/${business.slug}/widget.js"></script>`
+    : "";
 
   return (
     <div className="ab-page relative max-w-4xl space-y-4">
@@ -370,7 +421,7 @@ export default function Settings() {
                 key={t}
                 value={t}
                 current={TABS[tab]}
-                onClick={() => setTab(i)}
+                onClick={() => selectTab(i)}
               >
                 {t}
               </TabsTrigger>
@@ -453,6 +504,30 @@ export default function Settings() {
                 <code className="block rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-mono text-slate-800">
                   {window.location.origin}/chat/{business?.slug}
                 </code>
+              </div>
+              <div>
+                <label className={labelClass}>Embeddable Chat Widget Snippet</label>
+                <code className="block rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-mono text-slate-800 break-all">
+                  {widgetScriptTag || "Save business slug to generate snippet"}
+                </code>
+                {widgetScriptTag && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="mt-2"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(widgetScriptTag);
+                        showToast("Widget snippet copied!");
+                      } catch {
+                        showToast("Copy failed. Please copy manually.");
+                      }
+                    }}
+                  >
+                    Copy snippet
+                  </Button>
+                )}
               </div>
               <Button type="submit" size="md" disabled={saving}>
                 {saving ? "Saving…" : "Save Changes"}
@@ -712,8 +787,69 @@ export default function Settings() {
         </Card>
       )}
 
-      {/* ── WhatsApp ── */}
+      {/* ── No-show ── */}
       {tab === 4 && (
+        <Card className="border border-slate-200/80 shadow-sm">
+          <CardHeader className="px-4 py-3 sm:px-5">
+            <CardTitle className="text-base text-slate-900">No-show Prevention</CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4 pt-4 sm:px-5">
+            <form onSubmit={saveNoShowSettings} className="space-y-4 text-sm">
+              <label className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={!!noShowSettings?.reminder_24h_enabled}
+                  onChange={(e) =>
+                    setNoShowSettings((prev) => ({ ...prev, reminder_24h_enabled: e.target.checked }))
+                  }
+                />
+                <span>Send reminder 24 hours before appointment</span>
+              </label>
+              <label className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={!!noShowSettings?.reminder_2h_enabled}
+                  onChange={(e) =>
+                    setNoShowSettings((prev) => ({ ...prev, reminder_2h_enabled: e.target.checked }))
+                  }
+                />
+                <span>Send reminder 2 hours before and ask for confirmation</span>
+              </label>
+              <label className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  checked={!!noShowSettings?.auto_cancel_unconfirmed_enabled}
+                  onChange={(e) =>
+                    setNoShowSettings((prev) => ({ ...prev, auto_cancel_unconfirmed_enabled: e.target.checked }))
+                  }
+                />
+                <span>Auto-cancel unconfirmed appointments before start</span>
+              </label>
+              <div>
+                <label className={labelClass}>Confirmation cutoff (minutes before appointment)</label>
+                <Input
+                  type="number"
+                  min={15}
+                  max={360}
+                  value={noShowSettings?.confirmation_cutoff_minutes ?? 90}
+                  onChange={(e) =>
+                    setNoShowSettings((prev) => ({
+                      ...prev,
+                      confirmation_cutoff_minutes: parseInt(e.target.value, 10) || 90,
+                    }))
+                  }
+                />
+              </div>
+              <Button type="submit" size="md" disabled={saving}>
+                {saving ? "Saving…" : "Save No-show Settings"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* ── WhatsApp ── */}
+      {tab === 5 && (
         <Card className="border border-slate-200/80 shadow-sm">
           <CardHeader className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
             <CardTitle className="text-base text-slate-900">
@@ -759,6 +895,57 @@ export default function Settings() {
                 </div>
                 <div className="rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-700">
                   WhatsApp is linked to your business. Customers can message this number to book appointments. Use <strong>Update number</strong> above to link a different WhatsApp Business number.
+                </div>
+                <div className="space-y-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    WhatsApp Book Now Link (tracked)
+                  </p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <label className={labelClass}>Campaign</label>
+                      <Input
+                        value={bookNowCampaign}
+                        onChange={(e) => setBookNowCampaign(e.target.value)}
+                        placeholder="e.g. summer_offer"
+                      />
+                    </div>
+                    <div>
+                      <label className={labelClass}>UTM Source</label>
+                      <Input
+                        value={bookNowUtmSource}
+                        onChange={(e) => setBookNowUtmSource(e.target.value)}
+                        placeholder="e.g. instagram"
+                      />
+                    </div>
+                  </div>
+                  <code className="block rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-mono text-slate-800 break-all">
+                    {bookNowLink || "Connect a WhatsApp number to generate link"}
+                  </code>
+                  {bookNowLink && (
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(bookNowLink);
+                            showToast("Book Now link copied!");
+                          } catch {
+                            showToast("Copy failed. Please copy manually.");
+                          }
+                        }}
+                      >
+                        Copy link
+                      </Button>
+                      <Button type="button" size="sm" onClick={() => window.open(bookNowLink, "_blank")}>
+                        Open link
+                      </Button>
+                    </div>
+                  )}
+                  <p className="text-xs text-slate-500">
+                    Leads entering via this link are tagged with source, campaign, and UTM for funnel attribution.
+                  </p>
                 </div>
               </>
             ) : (

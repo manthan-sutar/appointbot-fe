@@ -67,7 +67,7 @@ input, textarea, select, button {
 .ab-section-gap-last:last-child { margin-bottom: 0; }
 
 /* Stats grid */
-.ab-stats-grid    { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: var(--ab-section-gap); }
+.ab-stats-grid    { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem; margin-bottom: var(--ab-section-gap); }
 
 /* Quick actions */
 .ab-quick-actions { display: flex; gap: 0.75rem; margin-bottom: var(--ab-section-gap); }

@@ -11,6 +11,8 @@ import Login from "./pages/Login";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Appointments from "./pages/Appointments";
+import Customers from "./pages/Customers";
+import Campaigns from "./pages/Campaigns";
 import Settings from "./pages/Settings";
 import Privacy from "./pages/Privacy";
 
@@ -56,6 +58,26 @@ export default function App() {
               <ProtectedRoute>
                 <Layout>
                   <Appointments />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/customers"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Customers />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/campaigns"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Campaigns />
                 </Layout>
               </ProtectedRoute>
             }

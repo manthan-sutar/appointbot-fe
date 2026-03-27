@@ -7,6 +7,14 @@ const STATUS_COLOR = {
   confirmed: { bg: '#d1fae5', text: '#065f46' },
   cancelled:  { bg: '#fee2e2', text: '#991b1b' },
   completed:  { bg: '#dbeafe', text: '#1e40af' },
+  no_show:    { bg: '#fef3c7', text: '#92400e' },
+};
+
+const CONFIRMATION_COLOR = {
+  pending: { bg: '#fef3c7', text: '#92400e' },
+  confirmed: { bg: '#d1fae5', text: '#065f46' },
+  declined: { bg: '#fee2e2', text: '#991b1b' },
+  expired: { bg: '#e5e7eb', text: '#374151' },
 };
 
 const VIEW_TABS = [
@@ -79,6 +87,8 @@ export default function Appointments() {
   const [servicesList, setServicesList] = useState([]);
   const [businessTz, setBusinessTz] = useState('Asia/Kolkata');
 
+  const [error, setError] = useState('');
+
   const [rescheduleTarget, setRescheduleTarget] = useState(null);
   const [reschedDate, setReschedDate] = useState('');
   const [reschedTime, setReschedTime] = useState('');
@@ -98,11 +108,20 @@ export default function Appointments() {
   const [createSubmitting, setCreateSubmitting] = useState(false);
   const [createError, setCreateError] = useState('');
   const [createSuggestedSlots, setCreateSuggestedSlots] = useState([]);
+  const [customerDrawerOpen, setCustomerDrawerOpen] = useState(false);
+  const [selectedCustomerPhone, setSelectedCustomerPhone] = useState('');
+  const [customerProfile, setCustomerProfile] = useState(null);
+  const [customerHistory, setCustomerHistory] = useState([]);
+  const [customerNotes, setCustomerNotes] = useState([]);
+  const [customerDrawerLoading, setCustomerDrawerLoading] = useState(false);
+  const [customerNoteInput, setCustomerNoteInput] = useState('');
+  const [customerNoteSaving, setCustomerNoteSaving] = useState(false);
+  const [customerDrawerError, setCustomerDrawerError] = useState('');
 
   // Load staff for filter dropdown once
   useEffect(() => {
-    Promise.all([api.get('/business'), api.get('/business/staff'), api.get('/business/services')]).then(
-      ([b, staff, services]) => {
+    Promise.all([api.get('/business'), api.get('/business/staff'), api.get('/business/services')])
+      .then(([b, staff, services]) => {
         const tz = b.data.business?.timezone || 'Asia/Kolkata';
         setBusinessTz(tz);
         const activeStaff = (staff.data.staff || []).filter(s => s.active);
@@ -116,12 +135,15 @@ export default function Appointments() {
         setCreateTime(time);
         setCreateStaffId(activeStaff[0]?.id ? String(activeStaff[0].id) : '');
         setCreateServiceId(activeServices[0]?.id ? String(activeServices[0].id) : '');
-      },
-    );
+      })
+      .catch(err => {
+        console.error('[Appointments] Failed to load business data:', err);
+      });
   }, []);
 
   const load = useCallback(async () => {
     setLoading(true);
+    setError('');
     try {
       const params = new URLSearchParams({ view, page, limit: 25 });
       if (status)  params.set('status',  status);
@@ -131,11 +153,15 @@ export default function Appointments() {
       if (view === 'range' && to)   params.set('to',   to);
 
       const { data } = await api.get(`/business/appointments?${params}`);
-      setRows(data.appointments);
-      setTotal(data.total);
-      setPages(data.pages);
-    } catch {
+      setRows(data.appointments || []);
+      setTotal(data.total || 0);
+      setPages(data.pages || 1);
+    } catch (err) {
+      console.error('[Appointments] Load error:', err);
       setRows([]);
+      setTotal(0);
+      setPages(1);
+      setError(err.response?.data?.error || 'Failed to load appointments. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -306,6 +332,60 @@ export default function Appointments() {
     }
   }
 
+  async function openCustomerDrawer(phone) {
+    if (!phone) return;
+    setCustomerDrawerOpen(true);
+    setSelectedCustomerPhone(phone);
+    setCustomerDrawerLoading(true);
+    setCustomerDrawerError('');
+    setCustomerNoteInput('');
+    try {
+      const [profileRes, historyRes] = await Promise.all([
+        api.get(`/business/customers/${encodeURIComponent(phone)}/profile`),
+        api.get(`/business/customers/${encodeURIComponent(phone)}/history`),
+      ]);
+      setCustomerProfile(profileRes.data.customer || null);
+      setCustomerHistory(historyRes.data.appointments || []);
+      setCustomerNotes(historyRes.data.notes || []);
+    } catch (err) {
+      setCustomerDrawerError(err.response?.data?.error || 'Failed to load customer details');
+      setCustomerProfile(null);
+      setCustomerHistory([]);
+      setCustomerNotes([]);
+    } finally {
+      setCustomerDrawerLoading(false);
+    }
+  }
+
+  function closeCustomerDrawer() {
+    setCustomerDrawerOpen(false);
+    setSelectedCustomerPhone('');
+    setCustomerProfile(null);
+    setCustomerHistory([]);
+    setCustomerNotes([]);
+    setCustomerNoteInput('');
+    setCustomerDrawerError('');
+    setCustomerNoteSaving(false);
+  }
+
+  async function addCustomerNote() {
+    const trimmed = customerNoteInput.trim();
+    if (!trimmed || !selectedCustomerPhone) return;
+    setCustomerNoteSaving(true);
+    setCustomerDrawerError('');
+    try {
+      const { data } = await api.post(`/business/customers/${encodeURIComponent(selectedCustomerPhone)}/notes`, {
+        note: trimmed,
+      });
+      setCustomerNotes((prev) => [data.note, ...prev]);
+      setCustomerNoteInput('');
+    } catch (err) {
+      setCustomerDrawerError(err.response?.data?.error || 'Failed to add note');
+    } finally {
+      setCustomerNoteSaving(false);
+    }
+  }
+
   return (
     <div className="ab-page max-w-[1200px] space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -363,6 +443,7 @@ export default function Appointments() {
           <option value="confirmed">Confirmed</option>
           <option value="cancelled">Cancelled</option>
           <option value="completed">Completed</option>
+          <option value="no_show">No Show</option>
         </select>
 
         <select
@@ -401,10 +482,22 @@ export default function Appointments() {
         )}
       </div>
 
+      {error && (
+        <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <span className="flex-1">{error}</span>
+          <Button type="button" variant="outline" size="sm" className="shrink-0 border-red-200 text-red-600 hover:bg-red-100" onClick={load}>
+            Retry
+          </Button>
+        </div>
+      )}
+
       <Card className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm">
         {loading ? (
-          <div className="py-8 text-center text-sm text-slate-500 sm:py-10">Loading…</div>
-        ) : rows.length === 0 ? (
+          <div className="flex items-center justify-center gap-3 py-10 text-sm text-slate-500">
+            <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+            Loading appointments...
+          </div>
+        ) : rows.length === 0 && !error ? (
           <div className="py-16 text-center">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-3xl">📅</div>
             <div className="text-base font-semibold text-slate-800">No appointments found</div>
@@ -416,7 +509,7 @@ export default function Appointments() {
               <table className="w-full border-collapse">
                 <thead>
                   <tr>
-                    {['Date', 'Time', 'Service', 'Staff', 'Customer', 'Phone', 'Status', 'Ref', 'Actions'].map(h => (
+                    {['Date', 'Time', 'Service', 'Staff', 'Customer', 'Phone', 'Status', 'Confirmation', 'Ref', 'Actions'].map(h => (
                       <th key={h} className="whitespace-nowrap border-b border-slate-100 bg-slate-50 px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 sm:px-4">{h}</th>
                     ))}
                   </tr>
@@ -425,6 +518,7 @@ export default function Appointments() {
                   {rows.map((r, i) => {
                     const { date, time } = formatDateTime(r.scheduled_at, businessTz);
                     const sc = STATUS_COLOR[r.status] || { bg: '#f3f4f6', text: '#374151' };
+                    const cc = CONFIRMATION_COLOR[r.confirmation_status] || { bg: '#f3f4f6', text: '#374151' };
                     return (
                       <tr key={r.id} className={i % 2 !== 0 ? 'bg-slate-50/50' : ''}>
                         <td className="border-b border-slate-50 px-4 py-3 text-[13px] text-slate-600">
@@ -433,10 +527,43 @@ export default function Appointments() {
                         <td className="border-b border-slate-50 px-4 py-3 text-[13px] font-semibold text-slate-700">{time}</td>
                         <td className="border-b border-slate-50 px-4 py-3 text-[13px] text-slate-600">{r.service_name || '—'}</td>
                         <td className="border-b border-slate-50 px-4 py-3 text-[13px] text-slate-600">{r.staff_name || '—'}</td>
-                        <td className="border-b border-slate-50 px-4 py-3 text-[13px] text-slate-600">{r.customer_name || '—'}</td>
+                        <td className="border-b border-slate-50 px-4 py-3 text-[13px] text-slate-600">
+                          {r.customer_phone ? (
+                            <button
+                              type="button"
+                              className="rounded px-1 py-0.5 text-left text-blue-700 hover:bg-blue-50 hover:text-blue-800"
+                              onClick={() => openCustomerDrawer(r.customer_phone)}
+                            >
+                              {r.customer_name || r.customer_phone}
+                            </button>
+                          ) : (
+                            (r.customer_name || '—')
+                          )}
+                        </td>
                         <td className="border-b border-slate-50 px-4 py-3 font-mono text-xs text-slate-600">{r.customer_phone}</td>
                         <td className="border-b border-slate-50 px-4 py-3">
                           <span className="inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize" style={{ background: sc.bg, color: sc.text }}>{r.status}</span>
+                        </td>
+                        <td className="border-b border-slate-50 px-4 py-3">
+                          <span className="inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize" style={{ background: cc.bg, color: cc.text }}>
+                            {r.confirmation_status || 'pending'}
+                          </span>
+                          {r.cancel_reason === 'auto_cancel_unconfirmed' && (
+                            <div className="mt-1 text-[11px] text-slate-500">auto-cancelled</div>
+                          )}
+                          {r.customer_risk_tier && r.customer_risk_tier !== 'low' && (
+                            <div className="mt-1">
+                              <span
+                                className="inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                                style={{
+                                  background: r.customer_risk_tier === 'high' ? '#fee2e2' : '#fef3c7',
+                                  color: r.customer_risk_tier === 'high' ? '#991b1b' : '#92400e',
+                                }}
+                              >
+                                {r.customer_risk_tier} risk
+                              </span>
+                            </div>
+                          )}
                         </td>
                         <td className="border-b border-slate-50 px-4 py-3 text-xs text-slate-500">#{r.id}</td>
                         <td className="border-b border-slate-50 px-4 py-3 whitespace-nowrap">
@@ -592,6 +719,109 @@ export default function Appointments() {
                 </Button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {customerDrawerOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={closeCustomerDrawer}
+          role="dialog"
+          aria-modal="true"
+        >
+          <div
+            className="w-full max-w-2xl rounded-xl bg-white p-4 shadow-xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-start justify-between gap-3">
+              <div>
+                <div className="text-sm font-semibold text-slate-900">Customer CRM</div>
+                <div className="mt-0.5 text-xs text-slate-500">{selectedCustomerPhone}</div>
+              </div>
+              <Button type="button" variant="outline" size="sm" onClick={closeCustomerDrawer}>
+                Close
+              </Button>
+            </div>
+
+            {customerDrawerLoading ? (
+              <div className="py-8 text-sm text-slate-500">Loading customer details...</div>
+            ) : (
+              <div className="space-y-4">
+                {customerDrawerError && (
+                  <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                    {customerDrawerError}
+                  </div>
+                )}
+
+                {customerProfile && (
+                  <div className="grid grid-cols-2 gap-3 rounded-lg border border-slate-200 p-3 text-sm sm:grid-cols-4">
+                    <div>
+                      <div className="text-xs text-slate-500">Name</div>
+                      <div className="font-medium text-slate-900">{customerProfile.customer_name || '—'}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-slate-500">Last Visit</div>
+                      <div className="font-medium text-slate-900">
+                        {customerProfile.last_visit_at ? formatDateTime(customerProfile.last_visit_at, businessTz).date : '—'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-slate-500">Completed Visits</div>
+                      <div className="font-medium text-slate-900">{customerProfile.completed_visits || 0}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-slate-500">Total Spend</div>
+                      <div className="font-medium text-slate-900">₹{Math.round(Number(customerProfile.total_spend || 0))}</div>
+                    </div>
+                  </div>
+                )}
+
+                <div>
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Add Note</div>
+                  <div className="flex gap-2">
+                    <input
+                      className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none"
+                      value={customerNoteInput}
+                      onChange={(e) => setCustomerNoteInput(e.target.value)}
+                      placeholder="Example: Prefers evening slots, confirm by WhatsApp."
+                    />
+                    <Button type="button" onClick={addCustomerNote} disabled={customerNoteSaving || !customerNoteInput.trim()}>
+                      {customerNoteSaving ? 'Saving...' : 'Add'}
+                    </Button>
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Recent Notes</div>
+                    <div className="max-h-56 space-y-2 overflow-auto rounded-lg border border-slate-200 p-2">
+                      {customerNotes.length ? customerNotes.map((n) => (
+                        <div key={n.id} className="rounded border border-slate-100 bg-slate-50 px-2 py-2 text-xs">
+                          <div className="text-slate-700">{n.note}</div>
+                          <div className="mt-1 text-[11px] text-slate-500">{new Date(n.created_at).toLocaleString('en-IN')}</div>
+                        </div>
+                      )) : <div className="text-xs text-slate-500">No notes yet.</div>}
+                    </div>
+                  </div>
+                  <div>
+                    <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Recent Appointments</div>
+                    <div className="max-h-56 space-y-2 overflow-auto rounded-lg border border-slate-200 p-2">
+                      {customerHistory.length ? customerHistory.map((a) => {
+                        const dt = formatDateTime(a.scheduled_at, businessTz);
+                        return (
+                          <div key={a.id} className="rounded border border-slate-100 bg-slate-50 px-2 py-2 text-xs">
+                            <div className="font-medium text-slate-800">{a.service_name || 'Service'}</div>
+                            <div className="text-slate-600">{dt.date} • {dt.time}</div>
+                            <div className="mt-1 text-[11px] uppercase tracking-wide text-slate-500">{a.status}</div>
+                          </div>
+                        );
+                      }) : <div className="text-xs text-slate-500">No appointment history.</div>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
