@@ -15,7 +15,7 @@ function statusPillClass(status) {
   if (status === 'completed') return 'bg-emerald-100 text-emerald-700';
   if (status === 'failed') return 'bg-red-100 text-red-700';
   if (status === 'running') return 'bg-blue-100 text-blue-700';
-  return 'bg-slate-100 text-slate-700';
+  return 'bg-muted text-muted-foreground';
 }
 
 export default function Campaigns() {
@@ -205,7 +205,7 @@ export default function Campaigns() {
   return (
     <div className="ab-page relative max-w-[1100px] space-y-4">
       {toast ? (
-        <div className="fixed right-4 top-4 z-50 rounded-lg border border-slate-200/80 bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-lg sm:right-6 sm:top-6">
+        <div className="fixed right-4 top-4 z-50 rounded-lg border bg-foreground px-4 py-2 text-sm font-medium text-background shadow-lg sm:right-6 sm:top-6">
           {toast}
         </div>
       ) : null}
@@ -217,7 +217,7 @@ export default function Campaigns() {
         </p>
       </div>
 
-      <Card className="border border-slate-200/80 shadow-sm">
+      <Card className="border shadow-sm">
         <CardHeader className="px-4 py-3 sm:px-5">
           <CardTitle className="text-base">Create Campaign</CardTitle>
         </CardHeader>
@@ -230,7 +230,7 @@ export default function Campaigns() {
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Audience</label>
               <select
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 value={audienceType}
                 onChange={(e) => setAudienceType(e.target.value)}
               >
@@ -242,7 +242,7 @@ export default function Campaigns() {
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Send Type</label>
               <select
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 value={sendMode}
                 onChange={(e) => setSendMode(e.target.value)}
               >
@@ -270,7 +270,7 @@ export default function Campaigns() {
                 rows={4}
                 maxLength={1024}
                 placeholder="Write your promotional message..."
-                className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+                className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
               <div className="mt-1 text-xs text-slate-500">{message.length}/1024</div>
             </div>
@@ -287,7 +287,7 @@ export default function Campaigns() {
         </CardContent>
       </Card>
 
-      <Card className="border border-slate-200/80 shadow-sm">
+      <Card className="border shadow-sm">
         <CardHeader className="px-4 py-3 sm:px-5">
           <CardTitle className="text-base">Campaign Performance (30d)</CardTitle>
         </CardHeader>
@@ -323,7 +323,7 @@ export default function Campaigns() {
         </CardContent>
       </Card>
 
-      <Card className="border border-slate-200/80 shadow-sm">
+      <Card className="border shadow-sm">
         <CardHeader className="px-4 py-3 sm:px-5">
           <CardTitle className="text-base">Suppressed Contacts (Opted-out)</CardTitle>
         </CardHeader>
@@ -372,7 +372,7 @@ export default function Campaigns() {
         </CardContent>
       </Card>
 
-      <Card className="border border-slate-200/80 shadow-sm">
+      <Card className="border shadow-sm">
         <CardHeader className="px-4 py-3 sm:px-5">
           <CardTitle className="text-base">Campaign History</CardTitle>
         </CardHeader>
@@ -453,7 +453,7 @@ export default function Campaigns() {
                     {(failureDataByCampaign[c.id]?.topReasons || []).length ? (
                       <div className="mb-2 flex flex-wrap gap-2 text-xs">
                         {failureDataByCampaign[c.id].topReasons.map((r, idx) => (
-                          <span key={`${r.reason}-${idx}`} className="rounded bg-white px-2 py-1 text-red-700 border border-red-200">
+                          <span key={`${r.reason}-${idx}`} className="rounded border border-red-200 bg-background px-2 py-1 text-red-700">
                             {r.count}× {r.reason}
                           </span>
                         ))}
@@ -462,9 +462,9 @@ export default function Campaigns() {
                       <div className="mb-2 text-xs text-red-700">No failure reasons found.</div>
                     )}
                     {(failureDataByCampaign[c.id]?.failedRecipients || []).length ? (
-                      <div className="max-h-40 space-y-1 overflow-y-auto rounded border border-red-100 bg-white p-2">
+                      <div className="max-h-40 space-y-1 overflow-y-auto rounded border border-red-100 bg-background p-2">
                         {failureDataByCampaign[c.id].failedRecipients.map((fr) => (
-                          <div key={`${fr.customer_phone}-${fr.created_at}`} className="text-xs text-slate-700">
+                            <div key={`${fr.customer_phone}-${fr.created_at}`} className="text-xs text-foreground">
                             <span className="font-mono">{fr.customer_phone}</span> — {fr.error_message || 'unknown error'}
                           </div>
                         ))}

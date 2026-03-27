@@ -1,14 +1,27 @@
+import {
+  Children,
+  cloneElement,
+  createContext,
+  isValidElement,
+  useContext,
+} from "react";
 import { cn } from "./cn";
+
+const TabsContext = createContext(null);
 
 export function Tabs({ value, onValueChange, children, className }) {
   return (
-    <div className={cn("space-y-4", className)} data-value={value}>
-      {children}
-    </div>
+    <TabsContext.Provider value={{ value, onValueChange }}>
+      <div className={cn("space-y-4", className)} data-value={value}>
+        {children}
+      </div>
+    </TabsContext.Provider>
   );
 }
 
 export function TabsList({ children, className }) {
+  const ctx = useContext(TabsContext);
+
   return (
     <div
       className={cn(
@@ -17,7 +30,16 @@ export function TabsList({ children, className }) {
         className,
       )}
     >
-      {children}
+      {Children.map(children, (child) => {
+        if (!isValidElement(child)) return child;
+        const tabValue = child.props.value;
+        return cloneElement(child, {
+          current:
+            child.props.current !== undefined ? child.props.current : ctx?.value,
+          onClick:
+            child.props.onClick ?? (() => ctx?.onValueChange?.(tabValue)),
+        });
+      })}
     </div>
   );
 }

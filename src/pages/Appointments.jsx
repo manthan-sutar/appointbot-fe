@@ -55,6 +55,9 @@ const VIEW_TABS = [
   { id: 'range',    label: '🗓️ Date Range' },
 ];
 
+/** Base UI / Radix-style selects reject empty string as SelectItem value — use a sentinel. */
+const FILTER_ALL = '__all__';
+
 function formatDateTime(iso, tz = 'Asia/Kolkata') {
   const d = new Date(iso);
   return {
@@ -430,7 +433,7 @@ export default function Appointments() {
           <Button type="button" variant="outline" className="gap-2" onClick={exportCSV} disabled={!rows.length}>
             ⬇️ Export CSV
           </Button>
-          <Button type="button" className="gap-2 bg-emerald-600 hover:bg-emerald-700" onClick={openCreateAppointment}>
+          <Button type="button" className="gap-2" onClick={openCreateAppointment}>
             ➕ Add Appointment
           </Button>
         </div>
@@ -455,12 +458,15 @@ export default function Appointments() {
           />
         </div>
 
-        <Select value={status} onValueChange={(val) => applyFilter(setStatus, val)}>
+        <Select
+          value={status ? status : FILTER_ALL}
+          onValueChange={(val) => applyFilter(setStatus, val === FILTER_ALL ? '' : val)}
+        >
           <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="All statuses" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All statuses</SelectItem>
+            <SelectItem value={FILTER_ALL}>All statuses</SelectItem>
             <SelectItem value="confirmed">Confirmed</SelectItem>
             <SelectItem value="cancelled">Cancelled</SelectItem>
             <SelectItem value="completed">Completed</SelectItem>
@@ -468,14 +474,17 @@ export default function Appointments() {
           </SelectContent>
         </Select>
 
-        <Select value={staffId} onValueChange={(val) => applyFilter(setStaffId, val)}>
+        <Select
+          value={staffId ? String(staffId) : FILTER_ALL}
+          onValueChange={(val) => applyFilter(setStaffId, val === FILTER_ALL ? '' : val)}
+        >
           <SelectTrigger className="w-[160px]">
             <SelectValue placeholder="All staff" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All staff</SelectItem>
+            <SelectItem value={FILTER_ALL}>All staff</SelectItem>
             {staffList.map(st => (
-              <SelectItem key={st.id} value={st.id}>{st.name}</SelectItem>
+              <SelectItem key={st.id} value={String(st.id)}>{st.name}</SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -516,10 +525,10 @@ export default function Appointments() {
         </Alert>
       )}
 
-      <Card className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm">
+      <Card className="overflow-hidden rounded-xl border bg-background shadow-sm">
         {loading ? (
-          <div className="flex items-center justify-center gap-3 py-10 text-sm text-slate-500">
-            <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
+          <div className="flex items-center justify-center gap-3 py-10 text-sm text-muted-foreground">
+            <div className="h-2 w-2 animate-pulse rounded-full bg-foreground/40" />
             Loading appointments...
           </div>
         ) : rows.length === 0 && !error ? (
@@ -559,13 +568,13 @@ export default function Appointments() {
                         <TableCell>{r.staff_name || '—'}</TableCell>
                         <TableCell>
                           {r.customer_phone ? (
-                            <Button
-                              variant="link"
-                              className="h-auto p-0 text-sm"
+                            <button
+                              type="button"
                               onClick={() => openCustomerDrawer(r.customer_phone)}
+                              className="cursor-pointer border-0 bg-transparent p-0 text-left text-sm font-semibold text-primary underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                             >
                               {r.customer_name || r.customer_phone}
-                            </Button>
+                            </button>
                           ) : (
                             (r.customer_name || '—')
                           )}
@@ -617,7 +626,7 @@ export default function Appointments() {
                                 type="button"
                                 size="sm"
                                 variant="outline"
-                                className="h-7 text-emerald-700 hover:bg-emerald-50"
+                                className="h-7"
                                 onClick={() => completeAppointment(r.id)}
                               >
                                 Done
@@ -635,9 +644,9 @@ export default function Appointments() {
             </ScrollArea>
 
             {pages > 1 && (
-              <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 px-4 py-3 sm:px-5">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-t border px-4 py-3 sm:px-5">
                 <Button type="button" variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(p => p - 1)}>← Prev</Button>
-                <div className="text-xs text-slate-500 sm:text-sm">Page {page} of {pages} · {total} total</div>
+                <div className="text-xs text-muted-foreground sm:text-sm">Page {page} of {pages} · {total} total</div>
                 <Button type="button" variant="outline" size="sm" disabled={page >= pages} onClick={() => setPage(p => p + 1)}>Next →</Button>
               </div>
             )}
@@ -973,7 +982,7 @@ export default function Appointments() {
             </Button>
             <Button
               type="button"
-              onClick={submitCreateAppointment}
+              onClick={submitManualAppointment}
               disabled={createSubmitting || !createServiceId || !createStaffId || !createDate || !createTime || !createCustomerPhone}
             >
               {createSubmitting ? 'Creating…' : 'Create Appointment'}

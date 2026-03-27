@@ -15,7 +15,7 @@ import {
 } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
-import { toast } from 'sonner';
+import { Toast } from "../components/shared/Toast";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const TABS = ["Business", "Working Hours", "No-show", "WhatsApp", "Widget"];
@@ -113,6 +113,7 @@ export default function Settings() {
   const [bookNowUtmSource, setBookNowUtmSource] = useState("instagram");
   const [noShowSettings, setNoShowSettings] = useState(null);
   const [widgetApiKey, setWidgetApiKey] = useState(null);
+  const [widgetUrl, setWidgetUrl] = useState(null);
   const [widgetEmbedCode, setWidgetEmbedCode] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -148,6 +149,7 @@ export default function Settings() {
         setNoShowSettings(ns.data.noShowSettings || null);
         setSubscription(sub.data.subscription || null);
         setWidgetApiKey(wk.data.apiKey || null);
+        setWidgetUrl(wk.data.widgetUrl || null);
         setWidgetEmbedCode(wk.data.embedCode || "");
       })
       .finally(() => setLoading(false));
@@ -333,6 +335,7 @@ export default function Settings() {
     try {
       const { data } = await api.post("/business/widget-api-key/regenerate");
       setWidgetApiKey(data.apiKey);
+      setWidgetUrl(data.widgetUrl || null);
       setWidgetEmbedCode(data.embedCode);
       showToast("Widget API key regenerated!");
     } catch (err) {
@@ -344,16 +347,16 @@ export default function Settings() {
 
   if (loading) {
     return (
-      <div className="flex h-full items-center justify-center p-10 text-sm text-slate-500">
+      <div className="flex h-full items-center justify-center p-10 text-sm text-muted-foreground">
         Loading settings…
       </div>
     );
   }
 
   const inputClass =
-    "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none ring-offset-0 focus:border-slate-400 focus:ring-2 focus:ring-slate-200";
+    "w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none ring-offset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
   const labelClass =
-    "block text-xs font-semibold uppercase tracking-wide text-slate-500 mb-1";
+    "block text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1";
 
   const currentPlan = subscription?.plan || "free";
   const trialActive = subscription?.trialActive;
@@ -362,20 +365,16 @@ export default function Settings() {
   const waPhone = String(waConfig?.displayPhone || business?.phone || "").replace(/[^0-9]/g, "");
   const bookNowText = `Hi, I want to book an appointment. #src=whatsapp_book_now #cmp=${(bookNowCampaign || "default").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-")} #utm=${(bookNowUtmSource || "unknown").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-")}`;
   const bookNowLink = waPhone ? `https://wa.me/${waPhone}?text=${encodeURIComponent(bookNowText)}` : "";
-  const widgetScriptTag = business?.slug
-    ? `<script async src="${backendBase}/chat/${business.slug}/widget.js"></script>`
+  const widgetScriptTag = widgetUrl
+    ? `<script async src="${widgetUrl}"></script>`
     : "";
 
   return (
     <div className="ab-page relative max-w-4xl space-y-4">
-      {toast && (
-        <div className="fixed right-4 top-4 z-50 rounded-lg border border-slate-200/80 bg-slate-900 px-4 py-2 text-sm font-medium text-white shadow-lg sm:right-6 sm:top-6">
-          {toast}
-        </div>
-      )}
+      <Toast message={toast} visible={!!toast} />
 
       <div className="flex flex-col gap-3 sm:gap-4">
-        <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">
+        <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
           Settings
         </h1>
         <Tabs value={TABS[tab]} onValueChange={() => {}}>
@@ -396,17 +395,17 @@ export default function Settings() {
 
       {/* ── Business ── */}
       {tab === 0 && (
-        <Card className="border border-slate-200/80 shadow-sm">
+        <Card className="border shadow-sm">
           <CardHeader className="px-4 py-3 sm:px-5 space-y-2">
             <CardTitle className="text-base">Business Information</CardTitle>
             {/* Trial / plan badge */}
             {subscription && (
-              <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-                <Badge variant="outline" className="border-slate-300 text-slate-700">
+              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <Badge variant="outline" className="border text-foreground">
                   Plan: {currentPlan === "business" ? "Business" : currentPlan === "pro" ? "Pro" : "Free"}
                 </Badge>
                 {trialActive && currentPlan === "free" && (
-                  <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
+                  <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
                     {trialDaysLeft > 0
                       ? `${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left in trial`
                       : "Trial ending soon"}
@@ -465,14 +464,14 @@ export default function Settings() {
               </div>
               <div>
                 <label className={labelClass}>Your Chat URL</label>
-                <code className="block rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-mono text-slate-800">
+                <code className="block rounded-lg border bg-muted/50 px-3 py-2 text-xs font-mono text-foreground">
                   {backendBase}/chat/{business?.slug}
                 </code>
               </div>
               <div>
                 <label className={labelClass}>Embeddable Chat Widget Snippet</label>
-                <code className="block rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-mono text-slate-800 break-all">
-                  {widgetScriptTag || "Save business slug to generate snippet"}
+                <code className="block rounded-lg border bg-muted/50 px-3 py-2 text-[11px] font-mono text-foreground break-all">
+                  {widgetScriptTag || "Generate a widget API key (Widget tab) to see the embed snippet with your server URL"}
                 </code>
                 {widgetScriptTag && (
                   <Button
@@ -499,29 +498,28 @@ export default function Settings() {
             </form>
 
             {/* Simple plans section */}
-            <div className="mt-6 border-t border-slate-200 pt-4">
+            <div className="mt-6 border-t pt-4">
               <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   Plans
                 </span>
                 {trialActive && currentPlan === "free" && (
-                  <span className="text-[11px] text-slate-400">
+                  <span className="text-[11px] text-muted-foreground">
                     Your Pro/Business billing will start after your trial ends.
                   </span>
                 )}
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 text-xs">
-                  <div className="flex items-baseline justify-between gap-2">
+                {/* Pro */}
+                <div className="flex flex-col rounded-lg border bg-card p-4 text-xs">
+                  <div className="flex items-start justify-between gap-2">
                     <div>
-                      <div className="text-[13px] font-semibold text-slate-800">Pro</div>
-                      <div className="text-[11px] text-slate-500">For growing clinics & salons</div>
+                      <div className="text-sm font-semibold">Pro</div>
+                      <div className="mt-0.5 text-[11px] text-muted-foreground">For growing clinics &amp; salons</div>
                     </div>
-                    <div className="text-right text-slate-900">
-                      <div className="text-sm font-semibold">₹999/mo</div>
-                    </div>
+                    <div className="text-sm font-bold tabular-nums">₹999/mo</div>
                   </div>
-                  <ul className="mt-2 space-y-1 text-[11px] text-slate-600">
+                  <ul className="mt-3 space-y-1.5 text-[11px] text-muted-foreground">
                     <li>• 10 staff members</li>
                     <li>• 20 services</li>
                     <li>• 500 bookings / month</li>
@@ -529,33 +527,33 @@ export default function Settings() {
                   <Button
                     type="button"
                     size="sm"
-                    className="mt-3 w-full bg-slate-900 text-xs font-semibold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
+                    className="mt-4 w-full text-xs"
                     onClick={() => startUpgrade("pro")}
                     disabled={currentPlan === "pro" || currentPlan === "business"}
                   >
                     {currentPlan === "pro" ? "Current plan" : "Choose Pro"}
                   </Button>
                 </div>
-                <div className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-3 text-xs">
-                  <div className="flex items-baseline justify-between gap-2">
+
+                {/* Business — uses a heavier border to signal "recommended" */}
+                <div className="flex flex-col rounded-lg border-2 border-foreground bg-card p-4 text-xs">
+                  <div className="flex items-start justify-between gap-2">
                     <div>
-                      <div className="text-[13px] font-semibold text-slate-900">Business</div>
-                      <div className="text-[11px] text-slate-600">For multi‑location teams</div>
+                      <div className="text-sm font-semibold">Business</div>
+                      <div className="mt-0.5 text-[11px] text-muted-foreground">For multi&#8209;location teams</div>
                     </div>
-                    <div className="text-right text-slate-900">
-                      <div className="text-sm font-semibold">₹2,499/mo</div>
-                    </div>
+                    <div className="text-sm font-bold tabular-nums">₹2,499/mo</div>
                   </div>
-                  <ul className="mt-2 space-y-1 text-[11px] text-slate-700">
-                    <li>• Unlimited staff & services</li>
+                  <ul className="mt-3 space-y-1.5 text-[11px] text-muted-foreground">
+                    <li>• Unlimited staff &amp; services</li>
                     <li>• Unlimited bookings</li>
                     <li>• Priority support</li>
                   </ul>
                   <Button
                     type="button"
                     size="sm"
-                    variant="outline"
-                    className="mt-3 w-full border-indigo-400 text-xs font-semibold text-indigo-700 hover:bg-indigo-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    variant="secondary"
+                    className="mt-4 w-full text-xs"
                     onClick={() => startUpgrade("business")}
                     disabled={currentPlan === "business"}
                   >
@@ -572,9 +570,9 @@ export default function Settings() {
 
       {/* ── No-show ── */}
       {tab === 2 && (
-        <Card className="border border-slate-200/80 shadow-sm">
+        <Card className="border shadow-sm">
           <CardHeader className="px-4 py-3 sm:px-5">
-            <CardTitle className="text-base text-slate-900">No-show Prevention</CardTitle>
+            <CardTitle className="text-base text-foreground">No-show Prevention</CardTitle>
           </CardHeader>
           <CardContent className="px-4 pb-4 pt-4 sm:px-5">
             <form onSubmit={saveNoShowSettings} className="space-y-4 text-sm">
@@ -642,14 +640,14 @@ export default function Settings() {
 
       {/* ── WhatsApp ── */}
       {tab === 3 && (
-        <Card className="border border-slate-200/80 shadow-sm">
+        <Card className="border shadow-sm">
           <CardHeader className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-            <CardTitle className="text-base text-slate-900">
+            <CardTitle className="text-base text-foreground">
               WhatsApp Connection
             </CardTitle>
             {waConfig?.phoneNumberId || waConfig?.status === "connected" ? (
               <div className="flex flex-wrap items-center gap-2">
-                <Badge variant="default" className="bg-emerald-600 font-medium text-white">
+                <Badge variant="default">
                   Already connected
                 </Badge>
                 <Button
@@ -666,7 +664,6 @@ export default function Settings() {
               <Button
                 type="button"
                 size="md"
-                className="bg-emerald-600 font-semibold text-white hover:bg-emerald-700"
                 onClick={startWaConnect}
                 disabled={saving}
               >
@@ -677,19 +674,19 @@ export default function Settings() {
           <CardContent className="space-y-4 px-4 pb-4 pt-4 text-sm sm:px-5">
             {waConfig?.phoneNumberId || waConfig?.status === "connected" ? (
               <>
-                <div className="flex flex-col gap-1.5 border-b border-slate-100 pb-4">
-                  <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <div className="flex flex-col gap-1.5 border-b pb-4">
+                  <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Connected number
                   </span>
-                  <p className="font-mono text-base font-medium text-slate-900">
+                  <p className="font-mono text-base font-medium text-foreground">
                     {waConfig?.displayPhone || business?.phone || "—"}
                   </p>
                 </div>
-                <div className="rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-700">
+                <div className="rounded-lg border bg-muted/40 px-4 py-3 text-sm text-foreground">
                   WhatsApp is linked to your business. Customers can message this number to book appointments. Use <strong>Update number</strong> above to link a different WhatsApp Business number.
                 </div>
-                <div className="space-y-3 rounded-lg border border-slate-200 bg-white px-4 py-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <div className="space-y-3 rounded-lg border bg-background px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     WhatsApp Book Now Link (tracked)
                   </p>
                   <div className="grid gap-3 sm:grid-cols-2">
@@ -710,7 +707,7 @@ export default function Settings() {
                       />
                     </div>
                   </div>
-                  <code className="block rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-mono text-slate-800 break-all">
+                  <code className="block rounded-lg border bg-muted/50 px-3 py-2 text-[11px] font-mono text-foreground break-all">
                     {bookNowLink || "Connect a WhatsApp number to generate link"}
                   </code>
                   {bookNowLink && (
@@ -735,27 +732,27 @@ export default function Settings() {
                       </Button>
                     </div>
                   )}
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-muted-foreground">
                     Leads entering via this link are tagged with source, campaign, and UTM for funnel attribution.
                   </p>
                 </div>
               </>
             ) : (
-              <div className="rounded-lg border border-slate-200 bg-slate-50/50 px-4 py-3 text-sm text-slate-600">
+              <div className="rounded-lg border bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
                 Click <strong>Connect WhatsApp Business</strong> above. A window will open to link your WhatsApp Business number with the platform — no webhooks or Meta configuration needed. Your number must already be set up as a WhatsApp Business account in Meta.
               </div>
             )}
 
             {/* ── Meta fee disclosure ── */}
-            <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50/60 px-4 py-3 text-sm text-slate-700">
+            <div className="flex items-start gap-3 rounded-xl border bg-muted/50 px-4 py-3 text-sm text-foreground">
               <span className="mt-0.5 flex-shrink-0">ℹ️</span>
               <div className="leading-relaxed">
-                <p className="mb-1 font-semibold text-slate-800">About Meta's WhatsApp fees</p>
+                <p className="mb-1 font-semibold text-foreground">About Meta's WhatsApp fees</p>
                 <p className="mb-1">
-                  <span className="font-medium text-emerald-700">Booking conversations</span> (when customers message you first) are <span className="font-medium">free</span>.{' '}
-                  <span className="font-medium text-slate-800">Appointment reminders</span> sent by the bot outside the chat window are charged ~<span className="font-medium">₹0.40/message</span> by Meta — billed directly to your WhatsApp Business account, not through AppointBot.
+                  <span className="font-medium text-foreground">Booking conversations</span> (when customers message you first) are <span className="font-medium">free</span>.{' '}
+                  <span className="font-medium text-foreground">Appointment reminders</span> sent by the bot outside the chat window are charged ~<span className="font-medium">₹0.40/message</span> by Meta — billed directly to your WhatsApp Business account, not through AppointBot.
                 </p>
-                <p className="text-xs text-slate-500">
+                <p className="text-xs text-muted-foreground">
                   Most businesses pay under ₹100/month in Meta fees.{' '}
                   <a
                     href="https://business.whatsapp.com/products/platform-pricing"
@@ -774,10 +771,10 @@ export default function Settings() {
 
       {/* ── Widget ── */}
       {tab === 4 && (
-        <Card className="border border-slate-200/80 shadow-sm">
+        <Card className="border shadow-sm">
           <CardHeader className="px-4 py-3 sm:px-5">
-            <CardTitle className="text-base text-slate-900">Chat Widget</CardTitle>
-            <p className="text-xs text-slate-500 mt-1">
+            <CardTitle className="text-base text-foreground">Chat Widget</CardTitle>
+            <p className="text-xs text-muted-foreground mt-1">
               Embed the chat widget on your website to let visitors book appointments.
             </p>
           </CardHeader>
@@ -802,7 +799,7 @@ export default function Settings() {
               
               {widgetApiKey ? (
                 <div className="space-y-2">
-                  <code className="block rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-mono text-slate-800 break-all">
+                  <code className="block rounded-lg border bg-muted/50 px-3 py-2 text-xs font-mono text-foreground break-all">
                     {widgetApiKey}
                   </code>
                   <Button
@@ -823,7 +820,7 @@ export default function Settings() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 text-sm text-amber-900">
+                  <div className="rounded-lg border bg-muted/50 px-4 py-3 text-sm text-muted-foreground">
                     No API key found. Generate one to enable the widget.
                   </div>
                   <Button
@@ -842,7 +839,7 @@ export default function Settings() {
             {widgetApiKey && widgetEmbedCode && (
               <div className="space-y-3">
                 <label className={labelClass}>Embed Code (Add to your website)</label>
-                <code className="block rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-mono text-slate-800 break-all">
+                <code className="block rounded-lg border bg-muted/50 px-3 py-2 text-[11px] font-mono text-foreground break-all">
                   {widgetEmbedCode}
                 </code>
                 <div className="flex flex-wrap gap-2">
@@ -866,14 +863,14 @@ export default function Settings() {
             )}
 
             {/* Security Notice */}
-            <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50/60 px-4 py-3 text-sm text-slate-700">
+            <div className="flex items-start gap-3 rounded-xl border bg-muted/50 px-4 py-3 text-sm text-foreground">
               <span className="mt-0.5 flex-shrink-0">🔒</span>
               <div className="leading-relaxed">
-                <p className="mb-1 font-semibold text-slate-800">Secure Widget Integration</p>
+                <p className="mb-1 font-semibold text-foreground">Secure Widget Integration</p>
                 <p className="mb-1">
                   Your widget is protected by a unique API key. Only websites with your API key can embed the chat widget. Keep this key secure and regenerate it if you suspect it's been compromised.
                 </p>
-                <p className="text-xs text-slate-500 mt-2">
+                <p className="text-xs text-muted-foreground mt-2">
                   The widget will appear as a floating chat button in the bottom-right corner of your website.
                 </p>
               </div>
@@ -881,24 +878,23 @@ export default function Settings() {
 
             {/* Usage Instructions */}
             {widgetApiKey && (
-              <div className="space-y-2 rounded-lg border border-slate-200 bg-white px-4 py-3">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <div className="space-y-2 rounded-lg border bg-background px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   How to Use
                 </p>
-                <ol className="space-y-2 text-xs text-slate-600 list-decimal list-inside">
+                <ol className="space-y-2 text-xs text-muted-foreground list-decimal list-inside">
                   <li>Copy the embed code above</li>
-                  <li>Paste it in your website's HTML, just before the closing <code className="bg-slate-100 px-1 rounded">&lt;/body&gt;</code> tag</li>
+                  <li>Paste it in your website's HTML, just before the closing <code className="bg-muted px-1 rounded">&lt;/body&gt;</code> tag</li>
                   <li>The chat widget will appear automatically on all pages</li>
-                  <li>Customize the button color and text using data attributes (optional)</li>
                 </ol>
                 <details className="mt-3">
-                  <summary className="cursor-pointer text-xs font-medium text-slate-700 hover:text-slate-900">
+                  <summary className="cursor-pointer text-xs font-medium text-foreground hover:text-foreground">
                     Advanced customization
                   </summary>
-                  <div className="mt-2 space-y-2 text-xs text-slate-600">
-                    <p>Add these data attributes to customize the widget:</p>
-                    <code className="block rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-mono text-slate-800 break-all">
-                      {`<script async src="${backendBase}/chat/${business?.slug}/widget.js?api_key=${widgetApiKey}"\n  data-button-text="Chat with us"\n  data-close-text="Close chat"\n  data-button-color="#16a34a">\n</script>`}
+                  <div className="mt-2 space-y-2 text-xs text-muted-foreground">
+                    <p>Same script tag the API returns (uses your deployed backend URL):</p>
+                    <code className="block rounded-lg border bg-muted/50 px-3 py-2 text-[11px] font-mono text-foreground break-all">
+                      {widgetUrl ? `<script async src="${widgetUrl}"></script>` : "—"}
                     </code>
                   </div>
                 </details>
@@ -911,7 +907,7 @@ export default function Settings() {
       {/* ── Hours ── */}
       {tab === 1 && (
         <div className="space-y-6">
-          <p className="text-sm text-slate-600">
+          <p className="text-sm text-muted-foreground">
             Set open/close and optional lunch break per day. Appointments cannot be booked during lunch.
           </p>
           {staff
@@ -922,7 +918,7 @@ export default function Settings() {
               return (
                 <Card
                   key={member.id}
-                  className="border border-slate-200/80 shadow-sm"
+                  className="border shadow-sm"
                 >
                   <CardHeader className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
                     <CardTitle className="text-base">
@@ -940,8 +936,8 @@ export default function Settings() {
                   </CardHeader>
                   <CardContent className="space-y-4 px-4 pb-4 pt-4 text-sm sm:px-5">
                     {/* Apply to all days */}
-                    <div className="flex flex-wrap items-center gap-3 rounded-lg border border-dashed border-slate-200 bg-slate-50/50 px-3 py-3">
-                      <span className="text-xs font-medium text-slate-600 whitespace-nowrap">
+                    <div className="flex flex-wrap items-center gap-3 rounded-lg border-dashed border bg-muted/50/50 px-3 py-3">
+                      <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
                         Apply to all days:
                       </span>
                       <Input
@@ -1010,8 +1006,8 @@ export default function Settings() {
                     </div>
 
                     {/* Per-day table */}
-                    <div className="rounded-lg border border-slate-200 overflow-hidden">
-                      <div className="grid grid-cols-[minmax(3rem,1fr)_1fr_1fr_1fr_1fr] gap-2 px-3 py-2 bg-slate-100/80 text-xs font-medium text-slate-600 border-b border-slate-200">
+                    <div className="rounded-lg border overflow-hidden">
+                      <div className="grid grid-cols-[minmax(3rem,1fr)_1fr_1fr_1fr_1fr] gap-2 px-3 py-2 bg-muted/80 text-xs font-medium text-muted-foreground border-b border">
                         <span>Day</span>
                         <span>Open</span>
                         <span>Close</span>
@@ -1022,8 +1018,8 @@ export default function Settings() {
                         <div
                           key={day.day}
                           className={cn(
-                            "grid grid-cols-[minmax(3rem,1fr)_1fr_1fr_1fr_1fr] gap-2 px-3 py-2 items-center border-b border-slate-100 last:border-b-0",
-                            !day.enabled && "bg-slate-50/50 opacity-90"
+                            "grid grid-cols-[minmax(3rem,1fr)_1fr_1fr_1fr_1fr] gap-2 px-3 py-2 items-center border-b border last:border-b-0",
+                            !day.enabled && "bg-muted/50/50 opacity-90"
                           )}
                         >
                           <div className="flex items-center gap-2">
@@ -1032,14 +1028,14 @@ export default function Settings() {
                               className={cn(
                                 "rounded border px-2 py-1 text-xs font-medium transition-colors",
                                 day.enabled
-                                  ? "border-slate-900 bg-slate-900 text-white"
-                                  : "border-slate-200 bg-white text-slate-600"
+                                  ? "border-foreground bg-foreground text-background"
+                                  : "border bg-background text-muted-foreground"
                               )}
                               onClick={() => toggleStaffDay(member.id, day.day)}
                             >
                               {day.enabled ? "Open" : "Closed"}
                             </button>
-                            <span className="text-xs font-medium text-slate-800 w-8">
+                            <span className="text-xs font-medium text-foreground w-8">
                               {DAYS[day.day]}
                             </span>
                           </div>

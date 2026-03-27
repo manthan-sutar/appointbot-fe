@@ -12,6 +12,7 @@ import Signup from "./pages/Signup";
 import Login from "./pages/Login";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
+import LeadAnalytics from "./pages/LeadAnalytics";
 import Appointments from "./pages/Appointments";
 import Customers from "./pages/Customers";
 import Services from "./pages/operate/Services";
@@ -56,6 +57,16 @@ export default function App() {
               <ProtectedRoute>
                 <Layout>
                   <Dashboard />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/leads"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <LeadAnalytics />
                 </Layout>
               </ProtectedRoute>
             }

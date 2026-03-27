@@ -5,9 +5,10 @@ import { Input } from '../../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { PageHeader } from '../../components/shared/PageHeader';
 import { EmptyState } from '../../components/shared/EmptyState';
-import { toast } from 'sonner';
+import { Toast, useToastMessage } from '../../components/shared/Toast';
 
 export default function Staff() {
+  const { message: toastMessage, variant: toastVariant, showToast } = useToastMessage();
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -24,16 +25,16 @@ export default function Staff() {
       });
       setStaff((st) => [...st, data.staff]);
     } catch (err) {
-      toast.error(err.response?.data?.error || 'Failed to add staff');
+      showToast(err.response?.data?.error || 'Failed to add staff', { variant: 'destructive' });
     }
   }
 
   async function saveStaffMember(member) {
     try {
       await api.put(`/business/staff/${member.id}`, member);
-      toast.success('Staff saved!');
+      showToast('Staff saved!');
     } catch {
-      toast.error('Failed to save staff');
+      showToast('Failed to save staff', { variant: 'destructive' });
     }
   }
 
@@ -41,12 +42,12 @@ export default function Staff() {
     if (!confirm('Remove this staff member?')) return;
     await api.delete(`/business/staff/${id}`);
     setStaff((st) => st.filter((s) => s.id !== id));
-    toast.success('Staff removed');
+    showToast('Staff removed');
   }
 
   return (
-    <div className="ab-page max-w-5xl space-y-4">
-      <Toast message={toast} visible={!!toast} />
+    <div className="ab-page relative max-w-5xl space-y-4">
+      <Toast message={toastMessage} visible={!!toastMessage} variant={toastVariant} />
 
       <PageHeader
         title="Staff"
@@ -58,20 +59,20 @@ export default function Staff() {
         }
       />
 
-      <Card className="border border-slate-200/80 shadow-sm">
+      <Card className="border shadow-sm">
         <CardHeader className="px-4 py-3 sm:px-5">
           <CardTitle className="text-base">Your Team</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 px-4 pb-4 pt-4 sm:px-5">
           {loading ? (
-            <div className="text-sm text-slate-500">Loading staff…</div>
+            <div className="text-sm text-muted-foreground">Loading staff…</div>
           ) : staff.filter((m) => m.active).length > 0 ? (
             staff
               .filter((m) => m.active)
               .map((member) => (
                 <div
                   key={member.id}
-                  className="flex flex-wrap items-center gap-2 rounded-lg border border-slate-200 p-3"
+                  className="flex flex-wrap items-center gap-2 rounded-lg border p-3"
                 >
                   <Input
                     className="min-w-0 flex-1 sm:max-w-[200px]"

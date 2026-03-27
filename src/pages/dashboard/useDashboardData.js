@@ -53,10 +53,16 @@ export default function useDashboardData() {
         setStats(data.stats);
         setBusiness(data.business);
         setInsights(data.insights || null);
-        setTodayAppointments(data.todayAppointments || []);
-        const appts = data.upcomingAppointments || [];
         const now = new Date();
-        setUpcoming(appts.filter((ap) => new Date(ap.scheduled_at) > now).slice(0, 5));
+        const byTime = (a, b) => new Date(a.scheduled_at) - new Date(b.scheduled_at);
+        setTodayAppointments([...(data.todayAppointments || [])].sort(byTime));
+        const appts = data.upcomingAppointments || [];
+        setUpcoming(
+          appts
+            .filter((ap) => new Date(ap.scheduled_at) > now)
+            .sort(byTime)
+            .slice(0, 5),
+        );
       })
       .catch((err) => {
         console.error('[Dashboard] Load error:', err);

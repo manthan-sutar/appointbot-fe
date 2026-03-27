@@ -23,16 +23,17 @@ import {
 import { ScrollArea } from '../../components/ui/scroll-area';
 import { PageHeader } from '../../components/shared/PageHeader';
 import { EmptyState } from '../../components/shared/EmptyState';
-import { toast } from 'sonner';
+import { Toast, useToastMessage } from '../../components/shared/Toast';
 
 function statusPillClass(status) {
   if (status === 'completed') return 'bg-emerald-100 text-emerald-700';
   if (status === 'failed') return 'bg-red-100 text-red-700';
   if (status === 'running') return 'bg-blue-100 text-blue-700';
-  return 'bg-slate-100 text-slate-700';
+  return 'bg-muted text-foreground';
 }
 
 export default function CampaignHistory() {
+  const { message: toastMessage, variant: toastVariant, showToast } = useToastMessage(2500);
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [sendingId, setSendingId] = useState(null);
@@ -40,12 +41,6 @@ export default function CampaignHistory() {
   const [expandedFailureId, setExpandedFailureId] = useState(null);
   const [failureDataByCampaign, setFailureDataByCampaign] = useState({});
   const [error, setError] = useState('');
-  const [toast, setToast] = useState('');
-
-  function showToast(msg) {
-    setToast(msg);
-    setTimeout(() => setToast(''), 2500);
-  }
 
   async function loadCampaigns() {
     setLoading(true);
@@ -72,7 +67,7 @@ export default function CampaignHistory() {
       showToast(`Sent: ${data.sentCount}, Failed: ${data.failedCount}`);
       await loadCampaigns();
     } catch (err) {
-      showToast(err.response?.data?.error || 'Failed to send campaign');
+      showToast(err.response?.data?.error || 'Failed to send campaign', { variant: 'destructive' });
       await loadCampaigns();
     } finally {
       setSendingId(null);
@@ -85,7 +80,7 @@ export default function CampaignHistory() {
       setFailureDataByCampaign((prev) => ({ ...prev, [campaignId]: data }));
       setExpandedFailureId((prev) => (prev === campaignId ? null : campaignId));
     } catch (err) {
-      showToast(err.response?.data?.error || 'Failed to load failures');
+      showToast(err.response?.data?.error || 'Failed to load failures', { variant: 'destructive' });
     }
   }
 
@@ -98,7 +93,7 @@ export default function CampaignHistory() {
       await loadCampaigns();
       await loadFailureDetails(campaignId);
     } catch (err) {
-      showToast(err.response?.data?.error || 'Failed to retry failed recipients');
+      showToast(err.response?.data?.error || 'Failed to retry failed recipients', { variant: 'destructive' });
     } finally {
       setRetryingId(null);
     }
@@ -120,13 +115,13 @@ export default function CampaignHistory() {
       window.URL.revokeObjectURL(url);
       showToast('Failures CSV downloaded.');
     } catch (err) {
-      showToast(err.response?.data?.error || 'Failed to export failures CSV');
+      showToast(err.response?.data?.error || 'Failed to export failures CSV', { variant: 'destructive' });
     }
   }
 
   return (
-    <div className="ab-page max-w-6xl space-y-4">
-      <Toast message={toast} visible={!!toast} />
+    <div className="ab-page relative max-w-6xl space-y-4">
+      <Toast message={toastMessage} visible={!!toastMessage} variant={toastVariant} />
 
       <PageHeader
         title="Campaign History"
@@ -138,10 +133,10 @@ export default function CampaignHistory() {
         }
       />
 
-      <Card className="border border-slate-200/80 shadow-sm">
+      <Card className="border shadow-sm">
         <CardContent className="space-y-3 px-4 pb-4 pt-4 sm:px-5">
           {loading ? (
-            <div className="py-8 text-center text-sm text-slate-500">Loading campaigns…</div>
+            <div className="py-8 text-center text-sm text-muted-foreground">Loading campaigns…</div>
           ) : error ? (
             <div className="py-8 text-center text-sm text-red-600">{error}</div>
           ) : campaigns.length === 0 ? (
@@ -157,11 +152,11 @@ export default function CampaignHistory() {
             />
           ) : (
             campaigns.map((c) => (
-              <div key={c.id} className="rounded-xl border border-slate-200 p-4">
+              <div key={c.id} className="rounded-xl border p-4">
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-base font-semibold text-slate-900">{c.name}</div>
-                    <div className="mt-0.5 text-xs text-slate-500">
+                    <div className="text-base font-semibold text-foreground">{c.name}</div>
+                    <div className="mt-0.5 text-xs text-muted-foreground">
                       {String(c.audience_type || '').replace(/_/g, ' ')} • {new Date(c.created_at).toLocaleString('en-IN')}
                       {c.scheduled_at ? ` • scheduled ${new Date(c.scheduled_at).toLocaleString('en-IN')}` : ''}
                     </div>
@@ -212,25 +207,25 @@ export default function CampaignHistory() {
                   </div>
                 </div>
 
-                <div className="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                <div className="mt-3 rounded-lg bg-muted/50 px-3 py-2 text-sm text-foreground">
                   {c.send_mode === 'template'
                     ? `Template: ${c.template_name} (${c.template_language || 'en'})`
                     : c.message_text}
                 </div>
 
-                <div className="mt-2 flex flex-wrap gap-3 text-xs text-slate-600">
+                <div className="mt-2 flex flex-wrap gap-3 text-xs text-muted-foreground">
                   <span>Recipients: <strong>{c.total_recipients || 0}</strong></span>
                   <span className="text-emerald-700">Sent: <strong>{c.sent_count || 0}</strong></span>
                   <span className="text-red-700">Failed: <strong>{c.failed_count || 0}</strong></span>
                 </div>
 
                 {expandedFailureId === c.id && (
-                  <div className="mt-3 rounded-lg border border-red-200 bg-red-50 p-3">
+                  <div className="mt-3 rounded-lg border-red-200 bg-red-50 p-3">
                     <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-red-700">Failure drilldown</div>
                     {(failureDataByCampaign[c.id]?.topReasons || []).length ? (
                       <div className="mb-2 flex flex-wrap gap-2 text-xs">
                         {failureDataByCampaign[c.id].topReasons.map((r, idx) => (
-                          <span key={`${r.reason}-${idx}`} className="rounded bg-white px-2 py-1 text-red-700 border border-red-200">
+                          <span key={`${r.reason}-${idx}`} className="rounded bg-background px-2 py-1 text-red-700 border-red-200">
                             {r.count}× {r.reason}
                           </span>
                         ))}
@@ -239,9 +234,9 @@ export default function CampaignHistory() {
                       <div className="mb-2 text-xs text-red-700">No failure reasons found.</div>
                     )}
                     {(failureDataByCampaign[c.id]?.failedRecipients || []).length ? (
-                      <div className="max-h-40 space-y-1 overflow-y-auto rounded border border-red-100 bg-white p-2">
+                      <div className="max-h-40 space-y-1 overflow-y-auto rounded border-red-100 bg-background p-2">
                         {failureDataByCampaign[c.id].failedRecipients.map((fr) => (
-                          <div key={`${fr.customer_phone}-${fr.created_at}`} className="text-xs text-slate-700">
+                          <div key={`${fr.customer_phone}-${fr.created_at}`} className="text-xs text-foreground">
                             <span className="font-mono">{fr.customer_phone}</span> — {fr.error_message || 'unknown error'}
                           </div>
                         ))}

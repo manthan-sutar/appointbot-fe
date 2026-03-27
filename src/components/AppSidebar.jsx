@@ -1,16 +1,28 @@
 import { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { ChevronRight, LogOut } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import {
+  LayoutDashboardIcon,
+  CalendarIcon,
+  UsersIcon,
+  Settings2Icon,
+  MegaphoneIcon,
+  WrenchIcon,
+  UserIcon,
+  PlusIcon,
+  ClockIcon,
+  BarChartIcon,
+  FileTextIcon,
+  MessageSquareIcon,
+  ChevronRightIcon,
+  BriefcaseIcon,
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
-import { Button } from './ui/button';
-import { Avatar, AvatarFallback } from './ui/avatar';
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupContent,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -20,54 +32,55 @@ import {
   SidebarMenuSubItem,
 } from './ui/sidebar';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from './ui/dropdown-menu';
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from './ui/collapsible';
+import { NavUser } from './nav-user';
 
-const NAV = [
-  { to: '/dashboard/', label: 'Dashboard', icon: '📊' },
-  { to: '/dashboard/appointments', label: 'Appointments', icon: '📅' },
+const NAV_MAIN = [
+  { to: '/dashboard/', label: 'Dashboard', icon: LayoutDashboardIcon },
+  { to: '/dashboard/appointments', label: 'Appointments', icon: CalendarIcon },
+  { to: '/dashboard/leads', label: 'Lead analytics', icon: BarChartIcon },
+  { to: '/dashboard/customers', label: 'Customers', icon: UsersIcon },
   {
     label: 'Operate',
-    icon: '🏗️',
-    submenu: [
-      { to: '/dashboard/operate/services', label: 'Services', icon: '📋' },
-      { to: '/dashboard/operate/staff', label: 'Staff', icon: '👤' },
+    icon: WrenchIcon,
+    items: [
+      { to: '/dashboard/operate/services', label: 'Services', icon: BriefcaseIcon },
+      { to: '/dashboard/operate/staff', label: 'Staff', icon: UserIcon },
     ],
   },
-  { to: '/dashboard/customers', label: 'Customers', icon: '🧾' },
   {
     label: 'Campaigns',
-    icon: '📣',
-    submenu: [
-      { to: '/dashboard/campaigns/create', label: 'Create', icon: '➕' },
-      { to: '/dashboard/campaigns/history', label: 'History', icon: '📜' },
-      { to: '/dashboard/campaigns/performance', label: 'Performance', icon: '📊' },
-      { to: '/dashboard/campaigns/templates', label: 'Templates', icon: '📝' },
+    icon: MegaphoneIcon,
+    items: [
+      { to: '/dashboard/campaigns/create', label: 'Create', icon: PlusIcon },
+      { to: '/dashboard/campaigns/history', label: 'History', icon: ClockIcon },
+      { to: '/dashboard/campaigns/performance', label: 'Performance', icon: BarChartIcon },
+      { to: '/dashboard/campaigns/templates', label: 'Templates', icon: FileTextIcon },
     ],
   },
-  { to: '/dashboard/settings', label: 'Settings', icon: '⚙️' },
+  { to: '/dashboard/settings', label: 'Settings', icon: Settings2Icon },
 ];
 
 function planBadgeLabel(plan) {
-  if (plan === 'business') return 'Business';
-  if (plan === 'pro') return 'Pro';
+  const p = String(plan ?? 'free').toLowerCase();
+  if (p === 'business') return 'Business';
+  if (p === 'pro') return 'Pro';
   return 'Free';
 }
 
-export function AppSidebar() {
-  const { owner, logout } = useAuth();
+export function AppSidebar({ owner, onLogout, ...props }) {
   const location = useLocation();
-  const navigate = useNavigate();
+  /** null = still loading; avoids flashing "Free" before GET /business/plan returns */
   const [planLabel, setPlanLabel] = useState(null);
-  const [expandedMenu, setExpandedMenu] = useState(null);
 
   useEffect(() => {
-    if (!owner?.businessId) return undefined;
+    if (!owner?.businessId) {
+      setPlanLabel(owner ? '—' : null);
+      return;
+    }
     let cancelled = false;
     api
       .get('/business/plan')
@@ -75,168 +88,131 @@ export function AppSidebar() {
         if (!cancelled) setPlanLabel(planBadgeLabel(data?.plan));
       })
       .catch(() => {
-        if (!cancelled) setPlanLabel('Free');
+        if (!cancelled) setPlanLabel(planBadgeLabel('free'));
       });
     return () => {
       cancelled = true;
     };
-  }, [owner?.businessId]);
-
-  function handleLogout() {
-    logout();
-    navigate('/dashboard/login');
-  }
+  }, [owner?.businessId, owner?.id]);
 
   function isActive(to) {
     return location.pathname === to || (to !== '/dashboard/' && location.pathname.startsWith(to));
   }
 
-  function isSubmenuActive(submenuItems) {
-    return submenuItems?.some(item => isActive(item.to));
+  function isGroupActive(items) {
+    return items?.some(item => isActive(item.to));
   }
 
-  function toggleMenu(label) {
-    setExpandedMenu(prev => (prev === label ? null : label));
-  }
+  const chatUrl = owner?.slug
+    ? `${import.meta.env.VITE_API_URL || ''}/chat/${owner.slug}`
+    : null;
 
-  useEffect(() => {
-    NAV.forEach(item => {
-      if (item.submenu && isSubmenuActive(item.submenu)) {
-        setExpandedMenu(item.label);
-      }
-    });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]);
+  const user = {
+    name: owner?.email?.split('@')[0] || 'Account',
+    email: owner?.email || '',
+    avatar: '',
+    plan: planLabel === null ? undefined : planLabel,
+    onLogout,
+  };
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" {...props}>
+      {/* Brand */}
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-2 py-1">
-          <Link to="/dashboard/" className="flex items-center gap-2.5 text-sidebar-foreground">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-sidebar-primary text-base">
-              📅
-            </span>
-            <span className="text-base font-bold group-data-[collapsible=icon]:hidden">appointbot</span>
-          </Link>
-        </div>
-
-        {owner?.businessId && (
-          <div className="flex items-center justify-between border-y border-sidebar-border px-3 py-2 text-xs group-data-[collapsible=icon]:border-0 group-data-[collapsible=icon]:py-0">
-            <div className="max-w-[140px] truncate font-medium text-sidebar-foreground/70 group-data-[collapsible=icon]:hidden">
-              {owner.email?.split('@')[0] || 'My Business'}
-            </div>
-            <span className="rounded-md bg-sidebar-accent px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-sidebar-accent-foreground">
-              {planLabel === null ? '…' : planLabel}
-            </span>
-          </div>
-        )}
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" asChild>
+              <Link to="/dashboard/">
+                <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-foreground text-background text-base">
+                  📅
+                </div>
+                <div className="flex flex-col leading-tight">
+                  <span className="text-sm font-semibold">Appointbot</span>
+                  <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
+                    {planLabel === null ? '…' : planLabel}
+                  </span>
+                </div>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </SidebarHeader>
 
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {NAV.map(item => {
-                if (item.submenu) {
-                  const isExpanded = expandedMenu === item.label;
-                  const hasActiveChild = isSubmenuActive(item.submenu);
-                  return (
-                    <SidebarMenuItem key={item.label}>
-                      <SidebarMenuButton
-                        onClick={() => toggleMenu(item.label)}
-                        isActive={hasActiveChild}
-                        tooltip={item.label}
-                      >
-                        <span className="text-base">{item.icon}</span>
-                        <span>{item.label}</span>
-                        <ChevronRight
-                          className={`ml-auto transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-                        />
-                      </SidebarMenuButton>
-                      {isExpanded && (
-                        <SidebarMenuSub>
-                          {item.submenu.map(subItem => {
-                            const subActive = isActive(subItem.to);
-                            return (
-                              <SidebarMenuSubItem key={subItem.to}>
-                                <SidebarMenuSubButton render={<Link to={subItem.to} />} isActive={subActive}>
-                                  <span className="text-sm">{subItem.icon}</span>
-                                  <span>{subItem.label}</span>
-                                </SidebarMenuSubButton>
-                              </SidebarMenuSubItem>
-                            );
-                          })}
-                        </SidebarMenuSub>
-                      )}
-                    </SidebarMenuItem>
-                  );
-                }
-
-                const active = isActive(item.to);
+          <SidebarMenu>
+            {NAV_MAIN.map(item => {
+              /* ── Collapsible group ── */
+              if (item.items) {
+                const groupActive = isGroupActive(item.items);
                 return (
-                  <SidebarMenuItem key={item.to}>
-                    <SidebarMenuButton render={<Link to={item.to} />} isActive={active} tooltip={item.label}>
-                      <span className="text-base">{item.icon}</span>
-                      <span>{item.label}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
+                  <Collapsible
+                    key={item.label}
+                    asChild
+                    defaultOpen={groupActive}
+                    className="group/collapsible"
+                  >
+                    <SidebarMenuItem>
+                      <CollapsibleTrigger asChild>
+                        <SidebarMenuButton tooltip={item.label} isActive={groupActive}>
+                          <item.icon />
+                          <span>{item.label}</span>
+                          <ChevronRightIcon className="ml-auto size-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                        </SidebarMenuButton>
+                      </CollapsibleTrigger>
+                      <CollapsibleContent>
+                        <SidebarMenuSub>
+                          {item.items.map(sub => (
+                            <SidebarMenuSubItem key={sub.to}>
+                              <SidebarMenuSubButton asChild isActive={isActive(sub.to)}>
+                                <Link to={sub.to}>
+                                  <sub.icon />
+                                  <span>{sub.label}</span>
+                                </Link>
+                              </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                          ))}
+                        </SidebarMenuSub>
+                      </CollapsibleContent>
+                    </SidebarMenuItem>
+                  </Collapsible>
                 );
-              })}
-            </SidebarMenu>
-          </SidebarGroupContent>
+              }
+
+              /* ── Regular link ── */
+              return (
+                <SidebarMenuItem key={item.to}>
+                  <SidebarMenuButton asChild tooltip={item.label} isActive={isActive(item.to)}>
+                    <Link to={item.to}>
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              );
+            })}
+          </SidebarMenu>
         </SidebarGroup>
+
+        {/* Chat UI shortcut — pinned to bottom of content */}
+        {chatUrl && (
+          <SidebarGroup className="mt-auto">
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Open Chat UI" variant="outline">
+                  <a href={chatUrl} target="_blank" rel="noreferrer">
+                    <MessageSquareIcon />
+                    <span>Open Chat UI</span>
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroup>
+        )}
       </SidebarContent>
 
       <SidebarFooter>
-        {owner?.businessId && (
-          <div className="space-y-2">
-            <a
-              href={`${import.meta.env.VITE_API_URL || window.location.origin}/chat/${owner.slug || 'default'}`}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 py-2 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-emerald-700 group-data-[collapsible=icon]:aspect-square group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-2"
-            >
-              <span className="text-base">💬</span>
-              <span className="group-data-[collapsible=icon]:hidden">Open Chat UI</span>
-            </a>
-
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className="w-full justify-start gap-2 px-2 hover:bg-sidebar-accent group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:p-2"
-                >
-                  <Avatar className="h-8 w-8">
-                    <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-xs font-semibold">
-                      {(owner?.email?.[0] || '?').toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex flex-col items-start text-left group-data-[collapsible=icon]:hidden">
-                    <div className="truncate text-xs font-medium text-sidebar-foreground max-w-[140px]">
-                      {owner.email?.split('@')[0] || 'My Business'}
-                    </div>
-                    <div className="truncate text-[10px] text-sidebar-foreground/60 max-w-[140px]">
-                      {planLabel === null ? '…' : planLabel}
-                    </div>
-                  </div>
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>
-                  <div className="flex flex-col gap-1">
-                    <div className="text-xs font-medium">{owner.email?.split('@')[0] || 'Account'}</div>
-                    <div className="text-[10px] font-normal text-muted-foreground">{owner.email}</div>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={handleLogout}>
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Sign out</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          </div>
-        )}
+        <NavUser user={user} />
       </SidebarFooter>
     </Sidebar>
   );
