@@ -14,9 +14,9 @@ import { Badge } from "../components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const TABS = ["Business", "Services", "Staff", "Working Hours", "No-show", "WhatsApp"];
-const TAB_QUERY = ["business", "services", "staff", "hours", "no-show", "whatsapp"];
-const TAB_FROM_QUERY = { business: 0, services: 1, staff: 2, hours: 3, "no-show": 4, whatsapp: 5 };
+const TABS = ["Business", "Working Hours", "No-show", "WhatsApp"];
+const TAB_QUERY = ["business", "hours", "no-show", "whatsapp"];
+const TAB_FROM_QUERY = { business: 0, hours: 1, "no-show": 2, whatsapp: 3 };
 
 // Normalize time from API (e.g. "09:00:00" -> "09:00") for time inputs
 function toTimeValue(t) {
@@ -98,7 +98,6 @@ export default function Settings() {
   const [tab, setTab] = useState(initialTab);
   const [business, setBusiness] = useState(null);
   const [subscription, setSubscription] = useState(null);
-  const [services, setServices] = useState([]);
   const [staff, setStaff] = useState([]);
   const [hours, setHours] = useState([]);
   // Per-staff, per-day working hours config (7 days: open/close/lunch). Synced from hours for the Working Hours tab.
@@ -128,16 +127,14 @@ export default function Settings() {
   useEffect(() => {
     Promise.all([
       api.get("/business"),
-      api.get("/business/services"),
       api.get("/business/staff"),
       api.get("/business/hours"),
       api.get("/business/whatsapp"),
       api.get("/business/no-show-settings"),
       api.get("/billing/subscription"),
     ])
-      .then(([b, sv, st, h, wa, ns, sub]) => {
+      .then(([b, st, h, wa, ns, sub]) => {
         setBusiness(b.data.business);
-        setServices(sv.data.services);
         setStaff(st.data.staff);
         setHours(h.data.hours);
         setWaConfig(wa.data.whatsapp || null);
@@ -216,68 +213,7 @@ export default function Settings() {
     }
   }
 
-  // ── Services tab ──────────────────────────────────────────────────────────
-  async function addService() {
-    try {
-      const { data } = await api.post("/business/services", {
-        name: "New Service",
-        duration_minutes: 30,
-      });
-      setServices((sv) => [...sv, data.service]);
-    } catch (err) {
-      showToast(err.response?.data?.error || "Failed to add service");
-    }
-  }
-
-  function updateService(id, field, value) {
-    setServices((sv) =>
-      sv.map((s) => (s.id === id ? { ...s, [field]: value } : s)),
-    );
-  }
-
-  async function saveService(svc) {
-    try {
-      await api.put(`/business/services/${svc.id}`, svc);
-      showToast("Service saved!");
-    } catch {
-      showToast("Failed to save service");
-    }
-  }
-
-  async function deleteService(id) {
-    if (!confirm("Remove this service?")) return;
-    await api.delete(`/business/services/${id}`);
-    setServices((sv) => sv.filter((s) => s.id !== id));
-    showToast("Service removed");
-  }
-
-  // ── Staff tab ─────────────────────────────────────────────────────────────
-  async function addStaff() {
-    try {
-      const { data } = await api.post("/business/staff", {
-        name: "New Staff Member",
-      });
-      setStaff((st) => [...st, data.staff]);
-    } catch (err) {
-      showToast(err.response?.data?.error || "Failed to add staff");
-    }
-  }
-
-  async function saveStaffMember(member) {
-    try {
-      await api.put(`/business/staff/${member.id}`, member);
-      showToast("Staff saved!");
-    } catch {
-      showToast("Failed to save staff");
-    }
-  }
-
-  async function deleteStaff(id) {
-    if (!confirm("Remove this staff member?")) return;
-    await api.delete(`/business/staff/${id}`);
-    setStaff((st) => st.filter((s) => s.id !== id));
-    showToast("Staff removed");
-  }
+  // Services and Staff management moved to Operate module
 
   // ── Hours tab ─────────────────────────────────────────────────────────────
   function updateStaffDay(staffId, dayIndex, field, value) {
@@ -395,11 +331,12 @@ export default function Settings() {
   const currentPlan = subscription?.plan || "free";
   const trialActive = subscription?.trialActive;
   const trialDaysLeft = subscription?.trialDaysLeft || 0;
+  const backendBase = import.meta.env.VITE_API_URL || window.location.origin;
   const waPhone = String(waConfig?.displayPhone || business?.phone || "").replace(/[^0-9]/g, "");
   const bookNowText = `Hi, I want to book an appointment. #src=whatsapp_book_now #cmp=${(bookNowCampaign || "default").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-")} #utm=${(bookNowUtmSource || "unknown").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-")}`;
   const bookNowLink = waPhone ? `https://wa.me/${waPhone}?text=${encodeURIComponent(bookNowText)}` : "";
   const widgetScriptTag = business?.slug
-    ? `<script async src="${window.location.origin}/chat/${business.slug}/widget.js"></script>`
+    ? `<script async src="${backendBase}/chat/${business.slug}/widget.js"></script>`
     : "";
 
   return (
@@ -502,7 +439,7 @@ export default function Settings() {
               <div>
                 <label className={labelClass}>Your Chat URL</label>
                 <code className="block rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-mono text-slate-800">
-                  {window.location.origin}/chat/{business?.slug}
+                  {backendBase}/chat/{business?.slug}
                 </code>
               </div>
               <div>
@@ -604,191 +541,10 @@ export default function Settings() {
         </Card>
       )}
 
-      {/* ── Services ── */}
-      {tab === 1 && (
-        <Card className="border border-slate-200/80 shadow-sm">
-          <CardHeader className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-            <CardTitle className="text-base">Services</CardTitle>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={addService}
-            >
-              + Add Service
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-4 px-4 pb-4 pt-4 sm:px-5">
-            <p className="text-xs text-slate-500">
-              Add the services you offer. <strong>Duration</strong> is how long each appointment takes (in minutes)—the bot uses it to block slots. <strong>Price</strong> is optional and can be shown to customers.
-            </p>
-            {services.filter((sv) => sv.active).length > 0 && (
-              <div className="grid gap-x-4 gap-y-1 text-xs font-medium text-slate-500 sm:grid-cols-[1fr_100px_100px_auto]">
-                <div>Service name</div>
-                <div>Duration (min)</div>
-                <div>Price (optional)</div>
-                <div aria-hidden className="w-20" />
-              </div>
-            )}
-            {services
-              .filter((sv) => sv.active)
-              .map((svc) => (
-                <div key={svc.id} className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_100px_100px_auto] sm:items-center sm:gap-4">
-                  <div>
-                    <label htmlFor={`svc-name-${svc.id}`} className="sr-only">Service name</label>
-                    <input
-                      id={`svc-name-${svc.id}`}
-                      className={`min-w-0 flex-1 sm:max-w-none ${inputClass}`}
-                      value={svc.name}
-                      onChange={(e) =>
-                        updateService(svc.id, "name", e.target.value)
-                      }
-                      placeholder="e.g. Haircut, Consultation"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor={`svc-duration-${svc.id}`} className="sr-only">Duration in minutes</label>
-                    <input
-                      id={`svc-duration-${svc.id}`}
-                      className={`w-full sm:w-20 ${inputClass}`}
-                      type="number"
-                      min={5}
-                      max={480}
-                      value={svc.duration_minutes}
-                      onChange={(e) =>
-                        updateService(
-                          svc.id,
-                          "duration_minutes",
-                          parseInt(e.target.value, 10) || 30,
-                        )
-                      }
-                      placeholder="30"
-                      title="How long the appointment takes (minutes)"
-                    />
-                  </div>
-                  <div>
-                    <label htmlFor={`svc-price-${svc.id}`} className="sr-only">Price in rupees (optional)</label>
-                    <input
-                      id={`svc-price-${svc.id}`}
-                      className={`w-full sm:w-24 ${inputClass}`}
-                      type="number"
-                      min={0}
-                      step={1}
-                      value={svc.price || ""}
-                      onChange={(e) =>
-                        updateService(svc.id, "price", e.target.value)
-                      }
-                      placeholder="₹"
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={() => saveService(svc)}
-                    >
-                      Save
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="border-red-200 text-red-600 hover:bg-red-50"
-                      onClick={() => deleteService(svc.id)}
-                    >
-                      ✕
-                    </Button>
-                  </div>
-                </div>
-              ))}
-            {services.filter((sv) => sv.active).length === 0 && (
-              <div className="py-4 text-sm text-slate-500">
-                No services yet. Add one above.
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* ── Staff ── */}
-      {tab === 2 && (
-        <Card className="border border-slate-200/80 shadow-sm">
-          <CardHeader className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-            <CardTitle className="text-base">Staff Members</CardTitle>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              onClick={addStaff}
-            >
-              + Add Staff
-            </Button>
-          </CardHeader>
-          <CardContent className="space-y-2 px-4 pb-4 pt-4 sm:px-5">
-            {staff
-              .filter((m) => m.active)
-              .map((member) => (
-                <div
-                  key={member.id}
-                  className="flex flex-wrap items-center gap-2"
-                >
-                  <input
-                    className={`min-w-0 flex-1 sm:max-w-[160px] ${inputClass}`}
-                    value={member.name}
-                    onChange={(e) =>
-                      setStaff((st) =>
-                        st.map((m) =>
-                          m.id === member.id
-                            ? { ...m, name: e.target.value }
-                            : m,
-                        ),
-                      )
-                    }
-                    placeholder="Name"
-                  />
-                  <input
-                    className={`min-w-0 flex-1 sm:max-w-[140px] ${inputClass}`}
-                    value={member.role || ""}
-                    onChange={(e) =>
-                      setStaff((st) =>
-                        st.map((m) =>
-                          m.id === member.id
-                            ? { ...m, role: e.target.value }
-                            : m,
-                        ),
-                      )
-                    }
-                    placeholder="Role"
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={() => saveStaffMember(member)}
-                  >
-                    Save
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    className="border-red-200 text-red-600 hover:bg-red-50"
-                    onClick={() => deleteStaff(member.id)}
-                  >
-                    ✕
-                  </Button>
-                </div>
-              ))}
-            {staff.filter((m) => m.active).length === 0 && (
-              <div className="py-4 text-sm text-slate-500">
-                No staff yet. Add one above.
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      )}
+      {/* Services and Staff tabs removed - now in Operate module */}
 
       {/* ── No-show ── */}
-      {tab === 4 && (
+      {tab === 2 && (
         <Card className="border border-slate-200/80 shadow-sm">
           <CardHeader className="px-4 py-3 sm:px-5">
             <CardTitle className="text-base text-slate-900">No-show Prevention</CardTitle>
@@ -849,7 +605,7 @@ export default function Settings() {
       )}
 
       {/* ── WhatsApp ── */}
-      {tab === 5 && (
+      {tab === 3 && (
         <Card className="border border-slate-200/80 shadow-sm">
           <CardHeader className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
             <CardTitle className="text-base text-slate-900">
@@ -981,7 +737,7 @@ export default function Settings() {
       )}
 
       {/* ── Hours ── */}
-      {tab === 3 && (
+      {tab === 1 && (
         <div className="space-y-6">
           <p className="text-sm text-slate-600">
             Set open/close and optional lunch break per day. Appointments cannot be booked during lunch.

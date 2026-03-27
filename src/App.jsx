@@ -12,7 +12,12 @@ import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import Appointments from "./pages/Appointments";
 import Customers from "./pages/Customers";
-import Campaigns from "./pages/Campaigns";
+import Services from "./pages/operate/Services";
+import Staff from "./pages/operate/Staff";
+import CreateCampaign from "./pages/campaigns/Create";
+import CampaignHistory from "./pages/campaigns/History";
+import CampaignPerformance from "./pages/campaigns/Performance";
+import CampaignTemplates from "./pages/campaigns/Templates";
 import Settings from "./pages/Settings";
 import Privacy from "./pages/Privacy";
 
@@ -73,11 +78,61 @@ export default function App() {
             }
           />
           <Route
-            path="/dashboard/campaigns"
+            path="/dashboard/campaigns/create"
             element={
               <ProtectedRoute>
                 <Layout>
-                  <Campaigns />
+                  <CreateCampaign />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/campaigns/history"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <CampaignHistory />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/campaigns/performance"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <CampaignPerformance />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/campaigns/templates"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <CampaignTemplates />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/operate/services"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Services />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/operate/staff"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <Staff />
                 </Layout>
               </ProtectedRoute>
             }

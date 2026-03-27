@@ -120,7 +120,8 @@ export default function useDashboardData() {
   }, [stats, todayAppointments, business?.timezone]);
 
   const tz = business?.timezone || 'Asia/Kolkata';
-  const chatUrl = business?.slug ? `${window.location.origin}/chat/${business.slug}` : '';
+  const backendBase = import.meta.env.VITE_API_URL || window.location.origin;
+  const chatUrl = business?.slug ? `${backendBase}/chat/${business.slug}` : '';
   const isNewBusiness = (stats?.total ?? 0) === 0;
 
   const todayStr = useMemo(

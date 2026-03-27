@@ -5,6 +5,7 @@ import useDashboardData, { copyToClipboard } from './dashboard/useDashboardData'
 import { DashboardHeader, QuickActions } from './dashboard/HeaderSection';
 import { BookingLinkCard, NewBusinessBanner, StatsCards } from './dashboard/OverviewSection';
 import { AppointmentPanels } from './dashboard/AppointmentsSection';
+import { StatCard } from '../components/shared/StatCard';
 import { useAuth } from '../context/AuthContext';
 
 export default function Dashboard() {
@@ -92,37 +93,16 @@ export default function Dashboard() {
       <StatsCards stats={stats} />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Revenue (30d)</div>
-          <div className="mt-1 text-2xl font-bold text-slate-900">₹{Math.round(insights?.revenue30d || 0)}</div>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">No-show Rate (30d)</div>
-          <div className="mt-1 text-2xl font-bold text-slate-900">{(insights?.noShowRate30d || 0).toFixed(1)}%</div>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Repeat Customers (90d)</div>
-          <div className="mt-1 text-2xl font-bold text-slate-900">{(insights?.repeatCustomerRate90d || 0).toFixed(1)}%</div>
-        </div>
+        <StatCard label="Revenue (30d)" value={`₹${Math.round(insights?.revenue30d || 0)}`} />
+        <StatCard label="No-show Rate (30d)" value={`${(insights?.noShowRate30d || 0).toFixed(1)}%`} />
+        <StatCard label="Repeat Customers (90d)" value={`${(insights?.repeatCustomerRate90d || 0).toFixed(1)}%`} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Campaigns (30d)</div>
-          <div className="mt-1 text-2xl font-bold text-slate-900">{insights?.campaignSummary30d?.campaigns || 0}</div>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Campaign Recipients</div>
-          <div className="mt-1 text-2xl font-bold text-slate-900">{insights?.campaignSummary30d?.recipients || 0}</div>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Campaign Sent</div>
-          <div className="mt-1 text-2xl font-bold text-emerald-700">{insights?.campaignSummary30d?.sent || 0}</div>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">Campaign Delivery Rate</div>
-          <div className="mt-1 text-2xl font-bold text-slate-900">{Number(insights?.campaignSummary30d?.deliveryRate || 0).toFixed(1)}%</div>
-        </div>
+        <StatCard label="Campaigns (30d)" value={insights?.campaignSummary30d?.campaigns || 0} />
+        <StatCard label="Campaign Recipients" value={insights?.campaignSummary30d?.recipients || 0} />
+        <StatCard label="Campaign Sent" value={insights?.campaignSummary30d?.sent || 0} variant="emerald" />
+        <StatCard label="Campaign Delivery Rate" value={`${Number(insights?.campaignSummary30d?.deliveryRate || 0).toFixed(1)}%`} />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -132,16 +112,19 @@ export default function Dashboard() {
           </div>
           <div className="space-y-2">
             {(insights?.leadFunnelTimeline14d || []).length ? (
-              insights.leadFunnelTimeline14d.map((d) => (
-                <div key={String(d.day)} className="grid grid-cols-[80px_1fr] items-center gap-2 text-xs">
-                  <span className="text-slate-500">{String(d.day)}</span>
-                  <div className="flex gap-2">
-                    <span className="rounded bg-blue-50 px-2 py-0.5 text-blue-700">L {d.leadsCreated}</span>
-                    <span className="rounded bg-emerald-50 px-2 py-0.5 text-emerald-700">C {d.leadsConverted}</span>
-                    <span className="rounded bg-amber-50 px-2 py-0.5 text-amber-700">D {d.leadsDropped}</span>
+              insights.leadFunnelTimeline14d.map((d) => {
+                const dayLabel = d.day ? new Date(d.day).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' }) : String(d.day);
+                return (
+                  <div key={String(d.day)} className="grid grid-cols-[80px_1fr] items-center gap-2 text-xs">
+                    <span className="text-slate-500">{dayLabel}</span>
+                    <div className="flex gap-2">
+                      <span className="rounded bg-blue-50 px-2 py-0.5 text-blue-700">L {d.leadsCreated}</span>
+                      <span className="rounded bg-emerald-50 px-2 py-0.5 text-emerald-700">C {d.leadsConverted}</span>
+                      <span className="rounded bg-amber-50 px-2 py-0.5 text-amber-700">D {d.leadsDropped}</span>
+                    </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             ) : (
               <div className="text-sm text-slate-500">No funnel events yet.</div>
             )}
@@ -237,24 +220,9 @@ export default function Dashboard() {
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Leads ({attributionWindowDays}d)
-          </div>
-          <div className="mt-1 text-2xl font-bold text-slate-900">{Math.round(leads)}</div>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Lead Conversion ({attributionWindowDays}d)
-          </div>
-          <div className="mt-1 text-2xl font-bold text-slate-900">{leadConversionRate.toFixed(1)}%</div>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <div className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-            Dropped Leads ({attributionWindowDays}d)
-          </div>
-          <div className="mt-1 text-2xl font-bold text-slate-900">{Math.round(droppedLeads)}</div>
-        </div>
+        <StatCard label={`Leads (${attributionWindowDays}d)`} value={Math.round(leads)} variant="blue" />
+        <StatCard label={`Lead Conversion (${attributionWindowDays}d)`} value={`${leadConversionRate.toFixed(1)}%`} variant="emerald" />
+        <StatCard label={`Dropped Leads (${attributionWindowDays}d)`} value={Math.round(droppedLeads)} variant="amber" />
       </div>
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">

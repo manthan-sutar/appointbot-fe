@@ -7,8 +7,25 @@ import { Button } from '../components/ui/button';
 const NAV = [
   { to: '/dashboard/',             label: 'Dashboard',    icon: '📊' },
   { to: '/dashboard/appointments', label: 'Appointments', icon: '📅' },
+  {
+    label: 'Operate',
+    icon: '🏗️',
+    submenu: [
+      { to: '/dashboard/operate/services', label: 'Services', icon: '📋' },
+      { to: '/dashboard/operate/staff', label: 'Staff', icon: '👤' },
+    ],
+  },
   { to: '/dashboard/customers',    label: 'Customers',    icon: '🧾' },
-  { to: '/dashboard/campaigns',    label: 'Campaigns',    icon: '📣' },
+  {
+    label: 'Campaigns',
+    icon: '📣',
+    submenu: [
+      { to: '/dashboard/campaigns/create', label: 'Create', icon: '➕' },
+      { to: '/dashboard/campaigns/history', label: 'History', icon: '📜' },
+      { to: '/dashboard/campaigns/performance', label: 'Performance', icon: '📊' },
+      { to: '/dashboard/campaigns/templates', label: 'Templates', icon: '📝' },
+    ],
+  },
   { to: '/dashboard/settings',     label: 'Settings',     icon: '⚙️' },
 ];
 
@@ -23,6 +40,7 @@ export default function Layout({ children }) {
   const location = useLocation();
   const navigate = useNavigate();
   const [planLabel, setPlanLabel] = useState(null);
+  const [expandedMenu, setExpandedMenu] = useState(null);
 
   useEffect(() => {
     if (!owner?.businessId) return undefined;
@@ -48,6 +66,22 @@ export default function Layout({ children }) {
   function isActive(to) {
     return location.pathname === to || (to !== '/dashboard/' && location.pathname.startsWith(to));
   }
+
+  function isSubmenuActive(submenuItems) {
+    return submenuItems?.some(item => isActive(item.to));
+  }
+
+  function toggleMenu(label) {
+    setExpandedMenu(prev => prev === label ? null : label);
+  }
+
+  useEffect(() => {
+    NAV.forEach(item => {
+      if (item.submenu && isSubmenuActive(item.submenu)) {
+        setExpandedMenu(item.label);
+      }
+    });
+  }, [location.pathname]);
 
   return (
     <div className="ab-layout bg-slate-50 text-slate-900">
@@ -75,13 +109,63 @@ export default function Layout({ children }) {
           </div>
         )}
 
-        <nav className="flex flex-1 flex-col gap-0.5 px-3 py-3 text-sm">
-          {NAV.map(({ to, label, icon }) => {
-            const active = isActive(to);
+        <nav className="flex flex-1 flex-col gap-0.5 px-3 py-3 text-sm overflow-y-auto">
+          {NAV.map((item) => {
+            if (item.submenu) {
+              const isExpanded = expandedMenu === item.label;
+              const hasActiveChild = isSubmenuActive(item.submenu);
+              return (
+                <div key={item.label}>
+                  <button
+                    type="button"
+                    onClick={() => toggleMenu(item.label)}
+                    className={`relative flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 font-medium transition-colors ${
+                      hasActiveChild
+                        ? 'bg-slate-800/60 text-white'
+                        : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="text-[15px] opacity-90">{item.icon}</span>
+                      <span>{item.label}</span>
+                    </div>
+                    <span className={`text-xs transition-transform ${isExpanded ? 'rotate-90' : ''}`}>
+                      ▸
+                    </span>
+                  </button>
+                  {isExpanded && (
+                    <div className="ml-6 mt-0.5 space-y-0.5 border-l-2 border-slate-700/50 pl-2">
+                      {item.submenu.map((subItem) => {
+                        const subActive = isActive(subItem.to);
+                        return (
+                          <Link
+                            key={subItem.to}
+                            to={subItem.to}
+                            className={`relative flex items-center gap-2 rounded-lg px-2 py-2 text-sm font-medium transition-colors ${
+                              subActive
+                                ? 'bg-slate-800 text-white'
+                                : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
+                            }`}
+                          >
+                            {subActive && (
+                              <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r bg-indigo-400" />
+                            )}
+                            <span className="text-sm opacity-90">{subItem.icon}</span>
+                            <span className="text-xs">{subItem.label}</span>
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
+            const active = isActive(item.to);
             return (
               <Link
-                key={to}
-                to={to}
+                key={item.to}
+                to={item.to}
                 className={`relative flex items-center gap-3 rounded-lg px-3 py-2.5 font-medium transition-colors ${
                   active
                     ? 'bg-slate-800 text-white'
@@ -91,17 +175,17 @@ export default function Layout({ children }) {
                 {active && (
                   <span className="absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-r bg-indigo-400" />
                 )}
-                <span className="text-[15px] opacity-90">{icon}</span>
-                <span>{label}</span>
+                <span className="text-[15px] opacity-90">{item.icon}</span>
+                <span>{item.label}</span>
               </Link>
             );
           })}
         </nav>
 
         <div className="space-y-3 border-t border-white/10 px-4 py-4">
-          {owner?.slug && (
+          {owner?.businessId && (
             <a
-              href={`/chat/${owner.slug}`}
+              href={`${import.meta.env.VITE_API_URL || window.location.origin}/chat/${owner.slug || 'default'}`}
               target="_blank"
               rel="noreferrer"
               className="flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 transition-colors"
@@ -138,7 +222,7 @@ export default function Layout({ children }) {
 
       {/* ── Bottom nav (mobile only, shown via CSS) ─────────────────────── */}
       <nav className="ab-bottom-nav">
-        {NAV.map(({ to, label, icon }) => (
+        {NAV.filter(item => item.to).map(({ to, label, icon }) => (
           <Link key={to} to={to} className={isActive(to) ? 'active' : ''}>
             <span className="icon">{icon}</span>
             <span>{label.split(' ')[0]}</span>
