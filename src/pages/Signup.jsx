@@ -43,7 +43,7 @@ export default function Signup() {
       <div className="flex flex-[0_0_420px] flex-col bg-gradient-to-b from-slate-900 to-slate-800 px-12 py-10 text-white max-md:flex-1">
         <Link to="/" className="mb-auto flex items-center gap-2.5 no-underline">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-xl">📅</span>
-          <span className="text-lg font-bold tracking-tight text-white">appointbot</span>
+          <span className="text-lg font-bold tracking-tight text-white">Booklyft</span>
         </Link>
         <div className="flex flex-1 flex-col justify-center pb-10">
           <h2 className="mb-3 text-3xl font-bold leading-tight tracking-tight text-white">Your AI booking assistant<br />is waiting.</h2>

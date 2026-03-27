@@ -13,7 +13,7 @@ export default function Privacy() {
           <p className="mb-5 text-sm text-slate-500">Last updated: {new Date().toLocaleDateString()}</p>
 
           <p className="mb-3 text-sm leading-relaxed text-slate-800">
-            This Privacy Policy explains how <strong>appointbot</strong> (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;)
+            This Privacy Policy explains how <strong>Booklyft</strong> (&quot;we&quot;, &quot;us&quot;, or &quot;our&quot;)
             collects, uses, and protects information when you use our website, dashboard, and WhatsApp
             appointment assistant (the &quot;Service&quot;).
           </p>
@@ -98,7 +98,7 @@ export default function Privacy() {
 
           <h2 className="mt-5 mb-2 text-lg font-semibold text-slate-900">5. Your responsibilities as a business user</h2>
           <p className="mb-3 text-sm leading-relaxed text-slate-800">
-            If you use appointbot for your customers, you are responsible for ensuring that you have the
+            If you use Booklyft for your customers, you are responsible for ensuring that you have the
             appropriate consents and lawful basis to:
           </p>
           <ul className="mb-3 list-outside pl-5 text-sm leading-relaxed text-slate-800">

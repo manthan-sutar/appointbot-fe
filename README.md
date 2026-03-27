@@ -1,6 +1,6 @@
-# AppointBot — Frontend
+# Booklyft — Frontend
 
-React + Vite dashboard for AppointBot.
+React + Vite dashboard for Booklyft.
 
 ## Stack
 - React 18

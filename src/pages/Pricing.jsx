@@ -92,7 +92,7 @@ const FEATURE_ROWS = [
 const FAQ = [
   { q: 'Is there really a free plan?', a: 'Yes! The free plan gives you 50 bookings per month, 1 staff member, and 3 services — no credit card required. You can use it forever.' },
   { q: 'How does the WhatsApp integration work?', a: 'On the free and pro plans, you share a chat link with your customers. They click it, open WhatsApp, and start chatting with your AI bot. On the Business plan, you get a dedicated WhatsApp number — customers can message you directly.' },
-  { q: 'Are there any additional WhatsApp fees from Meta?', a: 'Yes, Meta charges a small per-message fee for appointment reminders sent to customers outside the chat window (called "utility" messages). Booking conversations that customers start are completely free. For India, reminders cost approximately ₹0.40 per message — a business sending 200 reminders/month pays around ₹80/month, billed directly by Meta to your WhatsApp Business account. This is separate from your AppointBot subscription.' },
+  { q: 'Are there any additional WhatsApp fees from Meta?', a: 'Yes, Meta charges a small per-message fee for appointment reminders sent to customers outside the chat window (called "utility" messages). Booking conversations that customers start are completely free. For India, reminders cost approximately ₹0.40 per message — a business sending 200 reminders/month pays around ₹80/month, billed directly by Meta to your WhatsApp Business account. This is separate from your Booklyft subscription.' },
   { q: 'Can I upgrade or downgrade anytime?', a: 'Yes. You can change your plan at any time from your dashboard. Upgrades take effect immediately, downgrades at the end of your billing period.' },
   { q: 'What happens if I exceed my booking limit?', a: 'We\'ll notify you when you\'re approaching your limit. You can upgrade your plan to continue accepting bookings. Existing bookings are never affected.' },
   { q: 'Do my customers need to install anything?', a: 'No. Customers just need WhatsApp, which they already have. They click your link and start chatting — no app downloads, no account creation.' },
@@ -179,7 +179,7 @@ export default function Pricing() {
             <span className="mt-0.5 flex-shrink-0 text-base">ℹ️</span>
             <div className="leading-relaxed">
               <span className="font-semibold text-slate-900">A note on WhatsApp fees:</span>{' '}
-              AppointBot uses Meta's WhatsApp Business API to power the chat. Meta charges a small per-message fee for certain messages —
+              Booklyft uses Meta's WhatsApp Business API to power the chat. Meta charges a small per-message fee for certain messages —
               specifically <span className="font-medium">appointment reminders</span> sent to customers (called "utility" messages).
               Booking conversations started by your customers are <span className="font-medium text-emerald-700">free</span>.
               Reminders typically cost <span className="font-medium">~₹0.40 per message</span> (India) — for a business with 200 bookings/month,

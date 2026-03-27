@@ -14,7 +14,7 @@ export default function Navbar() {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2.5 text-sm font-bold tracking-tight text-slate-900">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-100 text-base">📅</span>
-          <span>appointbot</span>
+          <span>Booklyft</span>
         </Link>
 
         {/* Desktop links */}

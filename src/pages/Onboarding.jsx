@@ -368,7 +368,7 @@ export default function Onboarding() {
             className="inline-flex w-fit items-center gap-2 font-semibold text-foreground no-underline"
           >
             <span className="text-xl">📅</span>
-            <span>appointbot</span>
+            <span>Booklyft</span>
           </Link>
 
           {/* Stepper: circle–connector–circle–connector–circle–connector–circle (3 equal connectors) */}

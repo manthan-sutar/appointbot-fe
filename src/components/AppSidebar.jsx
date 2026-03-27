@@ -127,7 +127,7 @@ export function AppSidebar({ owner, onLogout, ...props }) {
                   📅
                 </div>
                 <div className="flex flex-col leading-tight">
-                  <span className="text-sm font-semibold">Appointbot</span>
+                  <span className="text-sm font-semibold">Booklyft</span>
                   <span className="text-[10px] text-muted-foreground uppercase tracking-wider">
                     {planLabel === null ? '…' : planLabel}
                   </span>

@@ -94,7 +94,7 @@ export default function CreateCampaign() {
             </li>
           </ul>
           <p className="mt-2">
-            Full checklist: <code className="rounded bg-muted px-1">appointbot-be/docs/WHATSAPP_CAMPAIGNS.md</code> ·{' '}
+            Full checklist: <code className="rounded bg-muted px-1">docs/WHATSAPP_CAMPAIGNS.md</code> (backend repo) ·{' '}
             <a
               href="https://developers.facebook.com/docs/whatsapp/cloud-api/support/error-codes/"
               target="_blank"

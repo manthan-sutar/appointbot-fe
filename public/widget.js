@@ -13,7 +13,7 @@
   ).replace(/\/$/, '');
   if (!apiKey || !backendUrl) {
     console.error(
-      'AppointBot: set data-api-key and data-backend-url on this script, or use <script async src="BACKEND/widget.js?api_key=...">',
+      'Booklyft: set data-api-key and data-backend-url on this script, or use <script async src="BACKEND/widget.js?api_key=...">',
     );
     return;
   }

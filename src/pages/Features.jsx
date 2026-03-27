@@ -13,7 +13,7 @@ const FEATURES = [
   {
     icon: '💬',
     title: 'WhatsApp Native',
-    desc: 'Your customers already use WhatsApp every day. appointbot meets them there — no app downloads, no account creation, just a message.',
+    desc: 'Your customers already use WhatsApp every day. Booklyft meets them there — no app downloads, no account creation, just a message.',
     detail: ['Works on any WhatsApp number', 'Customers get instant replies 24/7', 'Booking confirmations sent automatically', 'Sandbox mode for testing, dedicated numbers for production'],
   },
   {
@@ -31,7 +31,7 @@ const FEATURES = [
   {
     icon: '👤',
     title: 'Customer Memory',
-    desc: 'appointbot remembers returning customers by their phone number — no need to re-enter their name every time.',
+    desc: 'Booklyft remembers returning customers by their phone number — no need to re-enter their name every time.',
     detail: ['Greets returning customers by name', 'Stores customer profiles securely', 'Faster booking for repeat customers', 'Works across all conversations'],
   },
   {
@@ -70,7 +70,7 @@ export default function Features() {
           <div className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-400">Features</div>
           <h1 className="mb-4 text-4xl font-bold leading-tight tracking-tight text-white">Everything your booking system needs</h1>
           <p className="mb-8 text-lg leading-relaxed text-slate-400">
-            appointbot combines AI, WhatsApp, and a powerful dashboard to give you a complete booking solution — without the complexity.
+            Booklyft combines AI, WhatsApp, and a powerful dashboard to give you a complete booking solution — without the complexity.
           </p>
           <Button asChild className="inline-flex rounded-lg bg-emerald-600 px-8 py-3.5 text-base font-semibold text-white shadow-sm hover:bg-emerald-700">
             <Link to="/dashboard/signup">Start for Free →</Link>

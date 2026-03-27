@@ -161,7 +161,7 @@ export default function Home() {
       <section className="ab-section bg-slate-50 px-6 py-14 md:py-16">
         <div className="mx-auto max-w-[640px] text-center">
           <h2 className="mb-4 text-xl font-bold tracking-tight text-slate-900 md:text-2xl">One WhatsApp message. Appointment booked.</h2>
-          <p className="text-sm text-slate-600">Or they ask for slots, services, reschedule — the AI handles the conversation. That's AppointBot.</p>
+          <p className="text-sm text-slate-600">Or they ask for slots, services, reschedule — the AI handles the conversation. That's Booklyft.</p>
         </div>
       </section>
 

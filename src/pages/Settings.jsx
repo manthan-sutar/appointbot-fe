@@ -750,7 +750,7 @@ export default function Settings() {
                 <p className="mb-1 font-semibold text-foreground">About Meta's WhatsApp fees</p>
                 <p className="mb-1">
                   <span className="font-medium text-foreground">Booking conversations</span> (when customers message you first) are <span className="font-medium">free</span>.{' '}
-                  <span className="font-medium text-foreground">Appointment reminders</span> sent by the bot outside the chat window are charged ~<span className="font-medium">₹0.40/message</span> by Meta — billed directly to your WhatsApp Business account, not through AppointBot.
+                  <span className="font-medium text-foreground">Appointment reminders</span> sent by the bot outside the chat window are charged ~<span className="font-medium">₹0.40/message</span> by Meta — billed directly to your WhatsApp Business account, not through Booklyft.
                 </p>
                 <p className="text-xs text-muted-foreground">
                   Most businesses pay under ₹100/month in Meta fees.{' '}

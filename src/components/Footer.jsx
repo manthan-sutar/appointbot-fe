@@ -7,7 +7,7 @@ export default function Footer() {
         <div className="min-w-0 flex-[0_0_240px]">
           <div className="mb-3 flex items-center gap-2.5">
             <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-base">📅</span>
-            <span className="text-base font-bold tracking-tight text-white">appointbot</span>
+            <span className="text-base font-bold tracking-tight text-white">Booklyft</span>
           </div>
           <p className="text-sm leading-relaxed text-slate-500">
             AI-powered appointment booking<br />on WhatsApp — for every business.
@@ -35,7 +35,7 @@ export default function Footer() {
         </div>
       </div>
       <div className="mx-auto flex max-w-[1120px] flex-wrap items-center justify-between gap-2 border-t border-white/10 px-6 py-5 text-sm text-slate-500">
-        <span>© {new Date().getFullYear()} appointbot. All rights reserved.</span>
+        <span>© {new Date().getFullYear()} Booklyft. All rights reserved.</span>
         <span>Built with ❤️ for small businesses</span>
       </div>
     </footer>
