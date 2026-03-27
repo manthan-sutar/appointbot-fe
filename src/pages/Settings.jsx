@@ -772,6 +772,142 @@ export default function Settings() {
         </Card>
       )}
 
+      {/* ── Widget ── */}
+      {tab === 4 && (
+        <Card className="border border-slate-200/80 shadow-sm">
+          <CardHeader className="px-4 py-3 sm:px-5">
+            <CardTitle className="text-base text-slate-900">Chat Widget</CardTitle>
+            <p className="text-xs text-slate-500 mt-1">
+              Embed the chat widget on your website to let visitors book appointments.
+            </p>
+          </CardHeader>
+          <CardContent className="px-4 pb-4 pt-4 sm:px-5 space-y-5">
+            {/* API Key Section */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className={labelClass}>Widget API Key</label>
+                {widgetApiKey && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={regenerateWidgetApiKey}
+                    disabled={saving}
+                    className="h-8 text-xs"
+                  >
+                    {saving ? "Generating…" : "Regenerate Key"}
+                  </Button>
+                )}
+              </div>
+              
+              {widgetApiKey ? (
+                <div className="space-y-2">
+                  <code className="block rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-mono text-slate-800 break-all">
+                    {widgetApiKey}
+                  </code>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(widgetApiKey);
+                        showToast("API key copied!");
+                      } catch {
+                        showToast("Copy failed. Please copy manually.");
+                      }
+                    }}
+                  >
+                    Copy API Key
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="rounded-lg border border-amber-200 bg-amber-50/60 px-4 py-3 text-sm text-amber-900">
+                    No API key found. Generate one to enable the widget.
+                  </div>
+                  <Button
+                    type="button"
+                    size="md"
+                    onClick={regenerateWidgetApiKey}
+                    disabled={saving}
+                  >
+                    {saving ? "Generating…" : "Generate API Key"}
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Embed Code Section */}
+            {widgetApiKey && widgetEmbedCode && (
+              <div className="space-y-3">
+                <label className={labelClass}>Embed Code (Add to your website)</label>
+                <code className="block rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-mono text-slate-800 break-all">
+                  {widgetEmbedCode}
+                </code>
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(widgetEmbedCode);
+                        showToast("Embed code copied!");
+                      } catch {
+                        showToast("Copy failed. Please copy manually.");
+                      }
+                    }}
+                  >
+                    Copy Embed Code
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Security Notice */}
+            <div className="flex items-start gap-3 rounded-xl border border-blue-200 bg-blue-50/60 px-4 py-3 text-sm text-slate-700">
+              <span className="mt-0.5 flex-shrink-0">🔒</span>
+              <div className="leading-relaxed">
+                <p className="mb-1 font-semibold text-slate-800">Secure Widget Integration</p>
+                <p className="mb-1">
+                  Your widget is protected by a unique API key. Only websites with your API key can embed the chat widget. Keep this key secure and regenerate it if you suspect it's been compromised.
+                </p>
+                <p className="text-xs text-slate-500 mt-2">
+                  The widget will appear as a floating chat button in the bottom-right corner of your website.
+                </p>
+              </div>
+            </div>
+
+            {/* Usage Instructions */}
+            {widgetApiKey && (
+              <div className="space-y-2 rounded-lg border border-slate-200 bg-white px-4 py-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  How to Use
+                </p>
+                <ol className="space-y-2 text-xs text-slate-600 list-decimal list-inside">
+                  <li>Copy the embed code above</li>
+                  <li>Paste it in your website's HTML, just before the closing <code className="bg-slate-100 px-1 rounded">&lt;/body&gt;</code> tag</li>
+                  <li>The chat widget will appear automatically on all pages</li>
+                  <li>Customize the button color and text using data attributes (optional)</li>
+                </ol>
+                <details className="mt-3">
+                  <summary className="cursor-pointer text-xs font-medium text-slate-700 hover:text-slate-900">
+                    Advanced customization
+                  </summary>
+                  <div className="mt-2 space-y-2 text-xs text-slate-600">
+                    <p>Add these data attributes to customize the widget:</p>
+                    <code className="block rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-[11px] font-mono text-slate-800 break-all">
+                      {`<script async src="${backendBase}/chat/${business?.slug}/widget.js?api_key=${widgetApiKey}"\n  data-button-text="Chat with us"\n  data-close-text="Close chat"\n  data-button-color="#16a34a">\n</script>`}
+                    </code>
+                  </div>
+                </details>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       {/* ── Hours ── */}
       {tab === 1 && (
         <div className="space-y-6">
