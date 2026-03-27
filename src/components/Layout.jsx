@@ -1,62 +1,30 @@
-import { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api from '../lib/api';
-import { Button } from '../components/ui/button';
+import { Button } from './ui/button';
+import { Avatar, AvatarFallback } from './ui/avatar';
+import { Separator } from './ui/separator';
+import { SidebarInset, SidebarProvider, SidebarTrigger } from './ui/sidebar';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from './ui/breadcrumb';
+import { AppSidebar } from './AppSidebar';
 
 const NAV = [
-  { to: '/dashboard/',             label: 'Dashboard',    icon: '📊' },
+  { to: '/dashboard/', label: 'Dashboard', icon: '📊' },
   { to: '/dashboard/appointments', label: 'Appointments', icon: '📅' },
-  {
-    label: 'Operate',
-    icon: '🏗️',
-    submenu: [
-      { to: '/dashboard/operate/services', label: 'Services', icon: '📋' },
-      { to: '/dashboard/operate/staff', label: 'Staff', icon: '👤' },
-    ],
-  },
-  { to: '/dashboard/customers',    label: 'Customers',    icon: '🧾' },
-  {
-    label: 'Campaigns',
-    icon: '📣',
-    submenu: [
-      { to: '/dashboard/campaigns/create', label: 'Create', icon: '➕' },
-      { to: '/dashboard/campaigns/history', label: 'History', icon: '📜' },
-      { to: '/dashboard/campaigns/performance', label: 'Performance', icon: '📊' },
-      { to: '/dashboard/campaigns/templates', label: 'Templates', icon: '📝' },
-    ],
-  },
-  { to: '/dashboard/settings',     label: 'Settings',     icon: '⚙️' },
+  { to: '/dashboard/customers', label: 'Customers', icon: '🧾' },
+  { to: '/dashboard/settings', label: 'Settings', icon: '⚙️' },
 ];
-
-function planBadgeLabel(plan) {
-  if (plan === 'business') return 'Business';
-  if (plan === 'pro') return 'Pro';
-  return 'Free';
-}
 
 export default function Layout({ children }) {
   const { owner, logout } = useAuth();
-  const location = useLocation();
   const navigate = useNavigate();
-  const [planLabel, setPlanLabel] = useState(null);
-  const [expandedMenu, setExpandedMenu] = useState(null);
-
-  useEffect(() => {
-    if (!owner?.businessId) return undefined;
-    let cancelled = false;
-    api
-      .get('/business/plan')
-      .then(({ data }) => {
-        if (!cancelled) setPlanLabel(planBadgeLabel(data?.plan));
-      })
-      .catch(() => {
-        if (!cancelled) setPlanLabel('Free');
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [owner?.businessId]);
+  const location = useLocation();
 
   function handleLogout() {
     logout();
@@ -67,175 +35,109 @@ export default function Layout({ children }) {
     return location.pathname === to || (to !== '/dashboard/' && location.pathname.startsWith(to));
   }
 
-  function isSubmenuActive(submenuItems) {
-    return submenuItems?.some(item => isActive(item.to));
-  }
+  function getBreadcrumbs() {
+    const path = location.pathname;
+    const segments = path.split('/').filter(Boolean);
+    const breadcrumbs = [{ label: 'Dashboard', to: '/dashboard/' }];
 
-  function toggleMenu(label) {
-    setExpandedMenu(prev => prev === label ? null : label);
-  }
-
-  useEffect(() => {
-    NAV.forEach(item => {
-      if (item.submenu && isSubmenuActive(item.submenu)) {
-        setExpandedMenu(item.label);
+    if (segments.length > 1) {
+      const section = segments[1];
+      if (section === 'appointments') {
+        breadcrumbs.push({ label: 'Appointments', to: '/dashboard/appointments' });
+      } else if (section === 'customers') {
+        breadcrumbs.push({ label: 'Customers', to: '/dashboard/customers' });
+      } else if (section === 'settings') {
+        breadcrumbs.push({ label: 'Settings', to: '/dashboard/settings' });
+      } else if (section === 'operate') {
+        breadcrumbs.push({ label: 'Operate', to: null });
+        if (segments[2] === 'services') breadcrumbs.push({ label: 'Services', to: '/dashboard/operate/services' });
+        if (segments[2] === 'staff') breadcrumbs.push({ label: 'Staff', to: '/dashboard/operate/staff' });
+      } else if (section === 'campaigns') {
+        breadcrumbs.push({ label: 'Campaigns', to: null });
+        if (segments[2] === 'create') breadcrumbs.push({ label: 'Create', to: '/dashboard/campaigns/create' });
+        if (segments[2] === 'history') breadcrumbs.push({ label: 'History', to: '/dashboard/campaigns/history' });
+        if (segments[2] === 'performance') breadcrumbs.push({ label: 'Performance', to: '/dashboard/campaigns/performance' });
+        if (segments[2] === 'templates') breadcrumbs.push({ label: 'Templates', to: '/dashboard/campaigns/templates' });
       }
-    });
-  }, [location.pathname]);
+    }
+
+    return breadcrumbs;
+  }
+
+  const breadcrumbs = getBreadcrumbs();
 
   return (
-    <div className="ab-layout bg-slate-50 text-slate-900">
-      {/* Slim top bar — unified dashboard chrome */}
-      <div className="ab-top-bar h-0.5 w-full flex-shrink-0 bg-slate-800" aria-hidden />
-
-      <div className="ab-layout-inner flex flex-1 min-h-0">
-      {/* ── Sidebar (hidden on mobile via CSS) ─────────────────────────── */}
-      <aside className="ab-sidebar flex flex-col border-r border-slate-200/80 bg-slate-900 text-slate-50">
-        <div className="border-b border-white/10 px-5 py-4">
-          <Link to="/dashboard/" className="flex items-center gap-2.5 text-sm font-semibold tracking-tight text-white">
-            <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 text-base">📅</span>
-            <span className="text-base font-bold">appointbot</span>
-          </Link>
-        </div>
-
-        {owner?.businessId && (
-          <div className="flex items-center justify-between border-b border-white/10 px-5 py-3 text-xs">
-            <div className="max-w-[140px] truncate font-medium text-slate-300">
-              {owner.email?.split('@')[0] || 'My Business'}
-            </div>
-            <span className="rounded-md bg-slate-700/80 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-slate-200">
-              {planLabel === null ? '…' : planLabel}
-            </span>
+    <SidebarProvider>
+      <AppSidebar />
+      <SidebarInset>
+        <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-background px-4">
+          <div className="flex items-center gap-2 flex-1">
+            <SidebarTrigger />
+            <Separator orientation="vertical" className="h-4" />
+            <Breadcrumb>
+              <BreadcrumbList>
+                {breadcrumbs.map((crumb, idx) => (
+                  <span key={idx} className="flex items-center">
+                    {idx > 0 && <BreadcrumbSeparator />}
+                    <BreadcrumbItem>
+                      {idx === breadcrumbs.length - 1 ? (
+                        <BreadcrumbPage>{crumb.label}</BreadcrumbPage>
+                      ) : crumb.to ? (
+                        <BreadcrumbLink asChild>
+                          <Link to={crumb.to}>{crumb.label}</Link>
+                        </BreadcrumbLink>
+                      ) : (
+                        <span className="text-muted-foreground">{crumb.label}</span>
+                      )}
+                    </BreadcrumbItem>
+                  </span>
+                ))}
+              </BreadcrumbList>
+            </Breadcrumb>
           </div>
-        )}
-
-        <nav className="flex flex-1 flex-col gap-0.5 px-3 py-3 text-sm overflow-y-auto">
-          {NAV.map((item) => {
-            if (item.submenu) {
-              const isExpanded = expandedMenu === item.label;
-              const hasActiveChild = isSubmenuActive(item.submenu);
-              return (
-                <div key={item.label}>
-                  <button
-                    type="button"
-                    onClick={() => toggleMenu(item.label)}
-                    className={`relative flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2.5 font-medium transition-colors ${
-                      hasActiveChild
-                        ? 'bg-slate-800/60 text-white'
-                        : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span className="text-[15px] opacity-90">{item.icon}</span>
-                      <span>{item.label}</span>
-                    </div>
-                    <span className={`text-xs transition-transform ${isExpanded ? 'rotate-90' : ''}`}>
-                      ▸
-                    </span>
-                  </button>
-                  {isExpanded && (
-                    <div className="ml-6 mt-0.5 space-y-0.5 border-l-2 border-slate-700/50 pl-2">
-                      {item.submenu.map((subItem) => {
-                        const subActive = isActive(subItem.to);
-                        return (
-                          <Link
-                            key={subItem.to}
-                            to={subItem.to}
-                            className={`relative flex items-center gap-2 rounded-lg px-2 py-2 text-sm font-medium transition-colors ${
-                              subActive
-                                ? 'bg-slate-800 text-white'
-                                : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
-                            }`}
-                          >
-                            {subActive && (
-                              <span className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-r bg-indigo-400" />
-                            )}
-                            <span className="text-sm opacity-90">{subItem.icon}</span>
-                            <span className="text-xs">{subItem.label}</span>
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              );
-            }
-
-            const active = isActive(item.to);
-            return (
-              <Link
-                key={item.to}
-                to={item.to}
-                className={`relative flex items-center gap-3 rounded-lg px-3 py-2.5 font-medium transition-colors ${
-                  active
-                    ? 'bg-slate-800 text-white'
-                    : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100'
-                }`}
-              >
-                {active && (
-                  <span className="absolute left-0 top-1/2 h-6 w-0.5 -translate-y-1/2 rounded-r bg-indigo-400" />
-                )}
-                <span className="text-[15px] opacity-90">{item.icon}</span>
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="space-y-3 border-t border-white/10 px-4 py-4">
-          {owner?.businessId && (
-            <a
-              href={`${import.meta.env.VITE_API_URL || window.location.origin}/chat/${owner.slug || 'default'}`}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center justify-center gap-2 rounded-lg bg-emerald-600 px-3 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-emerald-700 transition-colors"
-            >
-              💬 <span>Open Chat UI</span>
-            </a>
-          )}
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-slate-700 text-xs font-semibold text-slate-200">
-              {(owner?.email?.[0] || '?').toUpperCase()}
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-[11px] text-slate-400">
-                {owner?.email}
+          <div className="ml-auto flex items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-sidebar-accent text-sidebar-accent-foreground text-xs font-semibold">
+                  {(owner?.email?.[0] || '?').toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div className="hidden sm:block min-w-0">
+                <div className="truncate text-xs text-muted-foreground">{owner?.email}</div>
               </div>
-              <Button
-                type="button"
-                variant="ghost"
-                className="mt-0.5 h-auto p-0 text-[11px] text-slate-500 hover:text-slate-200"
-                onClick={handleLogout}
-              >
-                Sign out
-              </Button>
             </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="text-xs hidden sm:inline-flex"
+              onClick={handleLogout}
+            >
+              Sign out
+            </Button>
           </div>
+        </header>
+        <div className="flex flex-1 flex-col">
+          {children}
         </div>
-      </aside>
 
-      {/* ── Main content ────────────────────────────────────────────────── */}
-      <main className="ab-main">
-        {children}
-      </main>
-      </div>
-
-      {/* ── Bottom nav (mobile only, shown via CSS) ─────────────────────── */}
-      <nav className="ab-bottom-nav">
-        {NAV.filter(item => item.to).map(({ to, label, icon }) => (
-          <Link key={to} to={to} className={isActive(to) ? 'active' : ''}>
-            <span className="icon">{icon}</span>
-            <span>{label.split(' ')[0]}</span>
-          </Link>
-        ))}
-        <button
-          onClick={handleLogout}
-          className="flex flex-1 flex-col items-center justify-center gap-1 border-l border-white/5 bg-transparent text-[10px] font-semibold text-white/60"
-        >
-          <span className="icon text-xl">🚪</span>
-          <span>Sign out</span>
-        </button>
-      </nav>
-    </div>
+        {/* Mobile bottom navigation */}
+        <nav className="ab-bottom-nav">
+          {NAV.map(({ to, label, icon }) => (
+            <Link key={to} to={to} className={isActive(to) ? 'active' : ''}>
+              <span className="icon">{icon}</span>
+              <span>{label.split(' ')[0]}</span>
+            </Link>
+          ))}
+          <button
+            onClick={handleLogout}
+            className="flex flex-1 flex-col items-center justify-center gap-1 border-l border-sidebar-border bg-transparent text-[10px] font-semibold text-sidebar-foreground/60"
+          >
+            <span className="icon text-xl">🚪</span>
+            <span>Sign out</span>
+          </button>
+        </nav>
+      </SidebarInset>
+    </SidebarProvider>
   );
 }

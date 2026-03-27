@@ -1,5 +1,7 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
+import { TooltipProvider } from "./components/ui/tooltip";
+import { Toaster } from "./components/ui/sonner";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Layout from "./components/Layout";
 
@@ -24,8 +26,9 @@ import Privacy from "./pages/Privacy";
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
+      <TooltipProvider>
+        <BrowserRouter>
+          <Routes>
           {/* Public marketing */}
           <Route path="/" element={<Home />} />
           <Route path="/features" element={<Features />} />
@@ -150,7 +153,9 @@ export default function App() {
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
+        <Toaster />
       </BrowserRouter>
+      </TooltipProvider>
     </AuthProvider>
   );
 }

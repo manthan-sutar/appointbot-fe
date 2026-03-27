@@ -1,20 +1,51 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../lib/api';
 import { Button } from '../components/ui/button';
-import { Card } from '../components/ui/card';
+import { Card, CardContent } from '../components/ui/card';
+import { Input } from '../components/ui/input';
+import { Badge } from '../components/ui/badge';
+import { Alert, AlertDescription } from '../components/ui/alert';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
+import { Tabs, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { ScrollArea } from '../components/ui/scroll-area';
+import { Textarea } from '../components/ui/textarea';
+import { Avatar, AvatarFallback } from '../components/ui/avatar';
+import { toast } from 'sonner';
 
-const STATUS_COLOR = {
-  confirmed: { bg: '#d1fae5', text: '#065f46' },
-  cancelled:  { bg: '#fee2e2', text: '#991b1b' },
-  completed:  { bg: '#dbeafe', text: '#1e40af' },
-  no_show:    { bg: '#fef3c7', text: '#92400e' },
+const STATUS_VARIANT = {
+  confirmed: 'default',
+  cancelled: 'destructive',
+  completed: 'secondary',
+  no_show: 'outline',
 };
 
-const CONFIRMATION_COLOR = {
-  pending: { bg: '#fef3c7', text: '#92400e' },
-  confirmed: { bg: '#d1fae5', text: '#065f46' },
-  declined: { bg: '#fee2e2', text: '#991b1b' },
-  expired: { bg: '#e5e7eb', text: '#374151' },
+const CONFIRMATION_VARIANT = {
+  pending: 'outline',
+  confirmed: 'default',
+  declined: 'destructive',
+  expired: 'secondary',
 };
 
 const VIEW_TABS = [
@@ -392,105 +423,97 @@ export default function Appointments() {
     <div className="ab-page max-w-[1200px] space-y-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">Appointments</h1>
-          <p className="mt-0.5 text-sm text-slate-500">{total} {total === 1 ? 'appointment' : 'appointments'} found</p>
+          <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">Appointments</h1>
+          <p className="mt-0.5 text-sm text-muted-foreground">{total} {total === 1 ? 'appointment' : 'appointments'} found</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="button" variant="outline" size="md" className="gap-2" onClick={exportCSV} disabled={!rows.length}>
+          <Button type="button" variant="outline" className="gap-2" onClick={exportCSV} disabled={!rows.length}>
             ⬇️ Export CSV
           </Button>
-          <Button type="button" size="md" className="gap-2 rounded-lg bg-emerald-600 font-semibold text-white shadow-sm hover:bg-emerald-700" onClick={openCreateAppointment}>
+          <Button type="button" className="gap-2 bg-emerald-600 hover:bg-emerald-700" onClick={openCreateAppointment}>
             ➕ Add Appointment
           </Button>
         </div>
       </div>
 
-      <div className="flex w-full min-w-0 gap-1 overflow-x-auto rounded-lg border border-slate-200 bg-slate-100 p-1">
-        {VIEW_TABS.map(t => (
-          <button
-            key={t.id}
-            type="button"
-            className={`h-8 flex-shrink-0 whitespace-nowrap rounded-md px-3 text-sm font-medium transition ${
-              view === t.id ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'
-            }`}
-            onClick={() => applyFilter(setView, t.id)}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <Tabs value={view} onValueChange={(val) => applyFilter(setView, val)}>
+        <TabsList className="grid w-full grid-cols-4">
+          {VIEW_TABS.map(t => (
+            <TabsTrigger key={t.id} value={t.id}>{t.label}</TabsTrigger>
+          ))}
+        </TabsList>
+      </Tabs>
 
       {/* Filters row */}
-      <div className="ab-filters-row mb-4">
-        {/* Search */}
-        <div className="flex min-w-[200px] flex-1 basis-[220px] items-center rounded-lg border border-slate-200 bg-white px-2.5 py-0">
-          <span className="mr-1.5 text-sm">🔍</span>
-          <input
-            className="flex-1 border-0 bg-transparent py-2 text-[13px] outline-none"
+      <div className="flex flex-wrap gap-2">
+        <div className="flex min-w-[200px] flex-1 basis-[220px]">
+          <Input
             placeholder="Search by name or phone…"
             value={search}
             onChange={e => applyFilter(setSearch, e.target.value)}
+            className="text-sm"
           />
-          {search && (
-            <button type="button" className="rounded p-0.5 text-sm text-slate-500 hover:text-slate-700" onClick={() => applyFilter(setSearch, '')}>✕</button>
-          )}
         </div>
 
-        <select
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] text-slate-700 outline-none"
-          value={status}
-          onChange={e => applyFilter(setStatus, e.target.value)}
-        >
-          <option value="">All statuses</option>
-          <option value="confirmed">Confirmed</option>
-          <option value="cancelled">Cancelled</option>
-          <option value="completed">Completed</option>
-          <option value="no_show">No Show</option>
-        </select>
+        <Select value={status} onValueChange={(val) => applyFilter(setStatus, val)}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="All statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">All statuses</SelectItem>
+            <SelectItem value="confirmed">Confirmed</SelectItem>
+            <SelectItem value="cancelled">Cancelled</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="no_show">No Show</SelectItem>
+          </SelectContent>
+        </Select>
 
-        <select
-          className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] text-slate-700 outline-none"
-          value={staffId}
-          onChange={e => applyFilter(setStaffId, e.target.value)}
-        >
-          <option value="">All staff</option>
-          {staffList.map(st => (
-            <option key={st.id} value={st.id}>{st.name}</option>
-          ))}
-        </select>
+        <Select value={staffId} onValueChange={(val) => applyFilter(setStaffId, val)}>
+          <SelectTrigger className="w-[160px]">
+            <SelectValue placeholder="All staff" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">All staff</SelectItem>
+            {staffList.map(st => (
+              <SelectItem key={st.id} value={st.id}>{st.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
 
         {view === 'range' && (
           <>
-            <input
+            <Input
               type="date"
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] text-slate-700 outline-none"
               value={from}
               onChange={e => applyFilter(setFrom, e.target.value)}
+              className="w-[160px]"
             />
-            <span className="flex-shrink-0 text-sm text-slate-500">→</span>
-            <input
+            <span className="flex items-center text-sm text-muted-foreground">→</span>
+            <Input
               type="date"
-              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[13px] text-slate-700 outline-none"
               value={to}
               onChange={e => applyFilter(setTo, e.target.value)}
+              className="w-[160px]"
             />
           </>
         )}
 
         {(status || staffId || search || from || to) && (
-          <Button type="button" variant="outline" size="sm" className="border-red-200 text-red-600 hover:bg-red-50" onClick={() => { setStatus(''); setStaffId(''); setSearch(''); setFrom(''); setTo(''); setPage(1); }}>
+          <Button type="button" variant="outline" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => { setStatus(''); setStaffId(''); setSearch(''); setFrom(''); setTo(''); setPage(1); }}>
             Reset filters
           </Button>
         )}
       </div>
 
       {error && (
-        <div className="flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <span className="flex-1">{error}</span>
-          <Button type="button" variant="outline" size="sm" className="shrink-0 border-red-200 text-red-600 hover:bg-red-100" onClick={load}>
-            Retry
-          </Button>
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription className="flex items-center justify-between gap-3">
+            <span className="flex-1">{error}</span>
+            <Button type="button" variant="outline" size="sm" onClick={load}>
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
       )}
 
       <Card className="overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-sm">
@@ -501,81 +524,82 @@ export default function Appointments() {
           </div>
         ) : rows.length === 0 && !error ? (
           <div className="py-16 text-center">
-            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-100 text-3xl">📅</div>
-            <div className="text-base font-semibold text-slate-800">No appointments found</div>
-            <div className="mt-1 text-sm text-slate-500">Try adjusting your filters or switching the view.</div>
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted text-3xl">📅</div>
+            <div className="text-base font-semibold text-foreground">No appointments found</div>
+            <div className="mt-1 text-sm text-muted-foreground">Try adjusting your filters or switching the view.</div>
           </div>
         ) : (
           <>
-            <div className="ab-table-wrap">
-              <table className="w-full border-collapse">
-                <thead>
-                  <tr>
-                    {['Date', 'Time', 'Service', 'Staff', 'Customer', 'Phone', 'Status', 'Confirmation', 'Ref', 'Actions'].map(h => (
-                      <th key={h} className="whitespace-nowrap border-b border-slate-100 bg-slate-50 px-3 py-2 text-left text-[11px] font-semibold uppercase tracking-wider text-slate-500 sm:px-4">{h}</th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {rows.map((r, i) => {
+            <ScrollArea className="h-[600px]">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Time</TableHead>
+                    <TableHead>Service</TableHead>
+                    <TableHead>Staff</TableHead>
+                    <TableHead>Customer</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Confirmation</TableHead>
+                    <TableHead>Ref</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((r) => {
                     const { date, time } = formatDateTime(r.scheduled_at, businessTz);
-                    const sc = STATUS_COLOR[r.status] || { bg: '#f3f4f6', text: '#374151' };
-                    const cc = CONFIRMATION_COLOR[r.confirmation_status] || { bg: '#f3f4f6', text: '#374151' };
                     return (
-                      <tr key={r.id} className={i % 2 !== 0 ? 'bg-slate-50/50' : ''}>
-                        <td className="border-b border-slate-50 px-4 py-3 text-[13px] text-slate-600">
-                          <div className="text-xs text-slate-500">{date}</div>
-                        </td>
-                        <td className="border-b border-slate-50 px-4 py-3 text-[13px] font-semibold text-slate-700">{time}</td>
-                        <td className="border-b border-slate-50 px-4 py-3 text-[13px] text-slate-600">{r.service_name || '—'}</td>
-                        <td className="border-b border-slate-50 px-4 py-3 text-[13px] text-slate-600">{r.staff_name || '—'}</td>
-                        <td className="border-b border-slate-50 px-4 py-3 text-[13px] text-slate-600">
+                      <TableRow key={r.id}>
+                        <TableCell>
+                          <div className="text-xs text-muted-foreground">{date}</div>
+                        </TableCell>
+                        <TableCell className="font-semibold">{time}</TableCell>
+                        <TableCell>{r.service_name || '—'}</TableCell>
+                        <TableCell>{r.staff_name || '—'}</TableCell>
+                        <TableCell>
                           {r.customer_phone ? (
-                            <button
-                              type="button"
-                              className="rounded px-1 py-0.5 text-left text-blue-700 hover:bg-blue-50 hover:text-blue-800"
+                            <Button
+                              variant="link"
+                              className="h-auto p-0 text-sm"
                               onClick={() => openCustomerDrawer(r.customer_phone)}
                             >
                               {r.customer_name || r.customer_phone}
-                            </button>
+                            </Button>
                           ) : (
                             (r.customer_name || '—')
                           )}
-                        </td>
-                        <td className="border-b border-slate-50 px-4 py-3 font-mono text-xs text-slate-600">{r.customer_phone}</td>
-                        <td className="border-b border-slate-50 px-4 py-3">
-                          <span className="inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize" style={{ background: sc.bg, color: sc.text }}>{r.status}</span>
-                        </td>
-                        <td className="border-b border-slate-50 px-4 py-3">
-                          <span className="inline-block rounded-full px-2.5 py-0.5 text-[11px] font-semibold capitalize" style={{ background: cc.bg, color: cc.text }}>
-                            {r.confirmation_status || 'pending'}
-                          </span>
-                          {r.cancel_reason === 'auto_cancel_unconfirmed' && (
-                            <div className="mt-1 text-[11px] text-slate-500">auto-cancelled</div>
-                          )}
-                          {r.customer_risk_tier && r.customer_risk_tier !== 'low' && (
-                            <div className="mt-1">
-                              <span
-                                className="inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
-                                style={{
-                                  background: r.customer_risk_tier === 'high' ? '#fee2e2' : '#fef3c7',
-                                  color: r.customer_risk_tier === 'high' ? '#991b1b' : '#92400e',
-                                }}
-                              >
+                        </TableCell>
+                        <TableCell className="font-mono text-xs">{r.customer_phone}</TableCell>
+                        <TableCell>
+                          <Badge variant={STATUS_VARIANT[r.status] || 'secondary'} className="capitalize">
+                            {r.status}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="space-y-1">
+                            <Badge variant={CONFIRMATION_VARIANT[r.confirmation_status] || 'secondary'} className="capitalize">
+                              {r.confirmation_status || 'pending'}
+                            </Badge>
+                            {r.cancel_reason === 'auto_cancel_unconfirmed' && (
+                              <div className="text-[11px] text-muted-foreground">auto-cancelled</div>
+                            )}
+                            {r.customer_risk_tier && r.customer_risk_tier !== 'low' && (
+                              <Badge variant={r.customer_risk_tier === 'high' ? 'destructive' : 'outline'} className="text-[10px] uppercase">
                                 {r.customer_risk_tier} risk
-                              </span>
-                            </div>
-                          )}
-                        </td>
-                        <td className="border-b border-slate-50 px-4 py-3 text-xs text-slate-500">#{r.id}</td>
-                        <td className="border-b border-slate-50 px-4 py-3 whitespace-nowrap">
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">#{r.id}</TableCell>
+                        <TableCell className="text-right">
                           {r.status === 'confirmed' ? (
-                            <div className="flex flex-wrap items-center gap-2">
+                            <div className="flex flex-wrap justify-end gap-2">
                               <Button
                                 type="button"
                                 size="sm"
                                 variant="outline"
-                                className="h-7 border-red-200 bg-white px-2 py-0 text-[12px] text-red-600 hover:bg-red-50"
+                                className="h-7 text-destructive hover:bg-destructive/10"
                                 onClick={() => cancelAppointment(r.id)}
                               >
                                 Cancel
@@ -584,7 +608,7 @@ export default function Appointments() {
                                 type="button"
                                 size="sm"
                                 variant="outline"
-                                className="h-7 border-slate-200 bg-white px-2 py-0 text-[12px] text-slate-700 hover:bg-slate-50"
+                                className="h-7"
                                 onClick={() => openReschedule(r)}
                               >
                                 Reschedule
@@ -593,22 +617,22 @@ export default function Appointments() {
                                 type="button"
                                 size="sm"
                                 variant="outline"
-                                className="h-7 border-emerald-200 bg-white px-2 py-0 text-[12px] text-emerald-700 hover:bg-emerald-50"
+                                className="h-7 text-emerald-700 hover:bg-emerald-50"
                                 onClick={() => completeAppointment(r.id)}
                               >
                                 Done
                               </Button>
                             </div>
                           ) : (
-                            <span className="text-[12px] text-slate-500">—</span>
+                            <span className="text-[12px] text-muted-foreground">—</span>
                           )}
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     );
                   })}
-                </tbody>
-              </table>
-            </div>
+                </TableBody>
+              </Table>
+            </ScrollArea>
 
             {pages > 1 && (
               <div className="flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 px-4 py-3 sm:px-5">
