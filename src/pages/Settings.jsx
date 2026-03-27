@@ -34,6 +34,56 @@ function formatBillingDate(iso) {
   }
 }
 
+/** Date + time for trial end / billing moments */
+function formatBillingDateTime(iso) {
+  if (!iso) return null;
+  try {
+    return new Date(iso).toLocaleString(undefined, {
+      dateStyle: "long",
+      timeStyle: "short",
+    });
+  } catch {
+    return null;
+  }
+}
+
+function tierLabel(plan) {
+  const p = String(plan || "free").toLowerCase();
+  if (p === "business") return "Business";
+  if (p === "pro") return "Pro";
+  return "Free";
+}
+
+/** Single status badge next to the tier name (paid vs trial vs free). */
+function getSubscriptionStatusBadge(sub, trialActive, cancelScheduled, isPaidViaRazorpay) {
+  if (!sub?.status) return null;
+  if (sub.status === "canceled") {
+    return { label: "Canceled", variant: "destructive" };
+  }
+  if (cancelScheduled) {
+    return { label: "Canceling", variant: "secondary" };
+  }
+  if (trialActive) {
+    return { label: "Free trial", variant: "secondary" };
+  }
+  if (sub.status === "active" && isPaidViaRazorpay) {
+    return { label: "Paid", variant: "secondary" };
+  }
+  if (sub.status === "active") {
+    return { label: "Active", variant: "outline" };
+  }
+  if (sub.status === "none") {
+    return { label: "Free plan", variant: "outline" };
+  }
+  if (sub.status === "trialing" && !trialActive) {
+    return { label: "Trial ended", variant: "outline" };
+  }
+  if (sub.status === "past_due") {
+    return { label: "Past due", variant: "destructive" };
+  }
+  return { label: String(sub.status), variant: "outline" };
+}
+
 const TABS = ["Business", "No-show", "WhatsApp", "Widget", "Billing"];
 const TAB_QUERY = ["business", "no-show", "whatsapp", "widget", "billing"];
 const TAB_FROM_QUERY = { business: 0, "no-show": 1, whatsapp: 2, widget: 3, billing: 4 };
@@ -78,23 +128,35 @@ export default function Settings() {
   }
 
   useEffect(() => {
-    Promise.all([
+    Promise.allSettled([
       api.get("/business"),
       api.get("/business/whatsapp"),
       api.get("/business/no-show-settings"),
       api.get("/billing/subscription"),
       api.get("/business/widget-api-key"),
-    ])
-      .then(([b, wa, ns, sub, wk]) => {
-        setBusiness(b.data.business);
-        setWaConfig(wa.data.whatsapp || null);
-        setNoShowSettings(ns.data.noShowSettings || null);
-        setSubscription(sub.data.subscription || null);
-        setWidgetApiKey(wk.data.apiKey || null);
-        setWidgetUrl(wk.data.widgetUrl || null);
-        setWidgetEmbedCode(wk.data.embedCode || "");
-      })
-      .finally(() => setLoading(false));
+    ]).then((results) => {
+      const [b, wa, ns, sub, wk] = results;
+      if (b.status === "fulfilled" && b.value?.data?.business) {
+        setBusiness(b.value.data.business);
+      } else if (b.status === "rejected") {
+        console.warn("[Settings] Failed to load business:", b.reason?.message || b.reason);
+      }
+      if (wa.status === "fulfilled") {
+        setWaConfig(wa.value?.data?.whatsapp || null);
+      }
+      if (ns.status === "fulfilled") {
+        setNoShowSettings(ns.value?.data?.noShowSettings || null);
+      }
+      if (sub.status === "fulfilled") {
+        setSubscription(sub.value?.data?.subscription || null);
+      }
+      if (wk.status === "fulfilled") {
+        const d = wk.value?.data;
+        setWidgetApiKey(d?.apiKey || null);
+        setWidgetUrl(d?.widgetUrl || null);
+        setWidgetEmbedCode(d?.embedCode || "");
+      }
+    }).finally(() => setLoading(false));
   }, []);
 
   // When WhatsApp connect popup signals success, refresh WhatsApp config
@@ -247,17 +309,23 @@ export default function Settings() {
   const labelClass =
     "block text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1";
 
-  const currentPlan = subscription?.plan || "free";
-  const trialActive = subscription?.trialActive;
-  const trialDaysLeft = subscription?.trialDaysLeft || 0;
+  /** Stored plan column (may be "free" during Pro-feature trial). Prefer effectivePlan for UI. */
+  const effectivePlan = subscription?.effectivePlan || subscription?.plan || "free";
+  const currentPlan = effectivePlan;
+  const trialActive = !!subscription?.trialActive;
+  const trialDaysLeft = Number(subscription?.trialDaysLeft) || 0;
   const renewalLabel = subscription?.current_period_end
     ? formatBillingDate(subscription.current_period_end)
     : null;
   const trialEndLabel = subscription?.trial_ends_at
     ? formatBillingDate(subscription.trial_ends_at)
     : null;
-  const hasRazorpayBilling =
+  const trialEndDateTime = subscription?.trial_ends_at
+    ? formatBillingDateTime(subscription.trial_ends_at)
+    : null;
+  const isPaidViaRazorpay =
     subscription?.gateway === "razorpay" && !!subscription?.external_subscription_id;
+  const hasRazorpayBilling = isPaidViaRazorpay;
   const canManageCancel =
     hasRazorpayBilling &&
     subscription?.status !== "canceled" &&
@@ -821,41 +889,53 @@ export default function Settings() {
               <div className="rounded-xl border border-border/80 bg-card px-5 py-6 sm:px-6 sm:py-7">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="min-w-0 flex-1 space-y-5">
-                    {(trialActive || subscription?.status === "trialing") && (
+                    {trialActive && (
                       <div className="rounded-lg border border-emerald-500/35 bg-emerald-500/[0.08] px-4 py-3 dark:bg-emerald-500/10">
                         <p className="text-sm font-semibold text-foreground">
                           Free trial in progress
                         </p>
                         <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
                           {trialDaysLeft > 0
-                            ? `${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left — you have Pro-level limits until your trial ends.`
-                            : trialEndLabel
-                              ? `Trial ends ${trialEndLabel}. Limits stay at Pro until then.`
-                              : "Your trial is ending soon — limits match Pro until it ends."}
+                            ? `${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} remaining. You have ${tierLabel(effectivePlan)} limits until the trial ends.`
+                            : "Your trial ends very soon — you still have Pro-level limits until then."}
                         </p>
+                        {trialEndDateTime && (
+                          <p className="mt-2 text-xs font-medium text-foreground">
+                            Ends: {trialEndDateTime}
+                          </p>
+                        )}
                       </div>
                     )}
                     <div className="space-y-2">
                       <div className="flex flex-wrap items-center gap-2.5">
                         <span className="text-lg font-semibold leading-none tracking-tight">
-                          {currentPlan === "business"
-                            ? "Business"
-                            : currentPlan === "pro"
-                              ? "Pro"
-                              : "Free"}
+                          {tierLabel(effectivePlan)}
                         </span>
-                        {subscription?.status && (
-                          <Badge variant="secondary" className="font-normal capitalize">
-                            {subscription.status === "canceled"
-                              ? "Canceled"
-                              : cancelScheduled
-                                ? "Canceling"
-                                : trialActive || subscription.status === "trialing"
-                                  ? "Free trial"
-                                  : subscription.status}
-                          </Badge>
-                        )}
+                        {(() => {
+                          const b = getSubscriptionStatusBadge(
+                            subscription,
+                            trialActive,
+                            cancelScheduled,
+                            isPaidViaRazorpay,
+                          );
+                          return b ? (
+                            <Badge variant={b.variant} className="font-normal">
+                              {b.label}
+                            </Badge>
+                          ) : null;
+                        })()}
                       </div>
+                      <p className="text-xs text-muted-foreground">
+                        {trialActive
+                          ? `Your trial includes ${tierLabel(effectivePlan)} limits until it ends.`
+                          : isPaidViaRazorpay
+                            ? "Paid through Razorpay — renews on the date below unless canceled."
+                            : subscription?.status === "none"
+                              ? "No subscription record — free tier limits apply."
+                              : effectivePlan === "free"
+                                ? "Free tier limits apply."
+                                : "Limits match the tier shown above."}
+                      </p>
                     </div>
                     <dl className="space-y-3 border-t border-border pt-5 text-sm">
                       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
@@ -870,10 +950,12 @@ export default function Settings() {
                               : "—"}
                         </dd>
                       </div>
-                      {trialActive && trialEndLabel && (
+                      {trialActive && (trialEndDateTime || trialEndLabel) && (
                         <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 text-xs">
                           <dt className="text-muted-foreground">Trial ends</dt>
-                          <dd className="tabular-nums text-muted-foreground text-right">{trialEndLabel}</dd>
+                          <dd className="tabular-nums text-muted-foreground text-right">
+                            {trialEndDateTime || trialEndLabel}
+                          </dd>
                         </div>
                       )}
                     </dl>
