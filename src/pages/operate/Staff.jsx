@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import api from '../../lib/api';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
@@ -7,10 +7,22 @@ import { PageHeader } from '../../components/shared/PageHeader';
 import { EmptyState } from '../../components/shared/EmptyState';
 import { Toast, useToastMessage } from '../../components/shared/Toast';
 
+function downloadStaffTemplate() {
+  const csv = 'name,role\nJane Doe,Stylist\nJohn Smith,\n';
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'staff-import-template.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
 export default function Staff() {
   const { message: toastMessage, variant: toastVariant, showToast } = useToastMessage();
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [importing, setImporting] = useState(false);
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     api.get('/business/staff')
@@ -45,6 +57,41 @@ export default function Staff() {
     showToast('Staff removed');
   }
 
+  async function importFromCsv(event) {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setImporting(true);
+    try {
+      const csv = await file.text();
+      const { data } = await api.post('/business/staff/import', { csv });
+      const { imported, skippedEmpty, errors } = data;
+      if (imported > 0) {
+        let msg = `Imported ${imported} staff member${imported === 1 ? '' : 's'}.`;
+        if (skippedEmpty) msg += ` ${skippedEmpty} empty row(s) skipped.`;
+        if (errors?.length) {
+          msg += ` ${errors.length} row(s) not imported (e.g. plan limit).`;
+        }
+        showToast(msg);
+      } else if (errors?.length) {
+        showToast(errors[0].message || 'Import failed', { variant: 'destructive' });
+      } else {
+        showToast(
+          skippedEmpty
+            ? 'No valid names in CSV. Use a name column, or name and role.'
+            : 'Nothing imported.',
+          { variant: 'destructive' },
+        );
+      }
+      const list = await api.get('/business/staff');
+      setStaff(list.data.staff || []);
+    } catch (err) {
+      showToast(err.response?.data?.error || 'CSV import failed', { variant: 'destructive' });
+    } finally {
+      setImporting(false);
+    }
+  }
+
   return (
     <div className="ab-page relative max-w-5xl space-y-4">
       <Toast message={toastMessage} visible={!!toastMessage} variant={toastVariant} />
@@ -53,15 +100,44 @@ export default function Staff() {
         title="Staff"
         description="Manage your team members and their roles."
         actions={
-          <Button type="button" onClick={addStaff} size="md">
-            + Add Staff
-          </Button>
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".csv,text/csv"
+              className="hidden"
+              onChange={importFromCsv}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="md"
+              disabled={importing}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {importing ? 'Importing…' : 'Import CSV'}
+            </Button>
+            <Button type="button" onClick={addStaff} size="md" disabled={importing}>
+              + Add Staff
+            </Button>
+          </>
         }
       />
 
       <Card className="border shadow-sm">
-        <CardHeader className="px-4 py-3 sm:px-5">
+        <CardHeader className="space-y-1 px-4 py-3 sm:px-5">
           <CardTitle className="text-base">Your Team</CardTitle>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            CSV columns: <span className="font-mono text-[11px]">name</span> (required),{' '}
+            <span className="font-mono text-[11px]">role</span> (optional). You can include a header row.{' '}
+            <button
+              type="button"
+              className="font-medium text-foreground underline underline-offset-2 hover:text-foreground"
+              onClick={downloadStaffTemplate}
+            >
+              Download template
+            </button>
+          </p>
         </CardHeader>
         <CardContent className="space-y-3 px-4 pb-4 pt-4 sm:px-5">
           {loading ? (
@@ -116,7 +192,7 @@ export default function Staff() {
             <EmptyState
               icon="👤"
               title="No staff yet"
-              description="Add one above to get started."
+              description="Add staff manually or import a CSV file."
             />
           )}
         </CardContent>

@@ -821,6 +821,20 @@ export default function Settings() {
               <div className="rounded-xl border border-border/80 bg-card px-5 py-6 sm:px-6 sm:py-7">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="min-w-0 flex-1 space-y-5">
+                    {(trialActive || subscription?.status === "trialing") && (
+                      <div className="rounded-lg border border-emerald-500/35 bg-emerald-500/[0.08] px-4 py-3 dark:bg-emerald-500/10">
+                        <p className="text-sm font-semibold text-foreground">
+                          Free trial in progress
+                        </p>
+                        <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                          {trialDaysLeft > 0
+                            ? `${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left — you have Pro-level limits until your trial ends.`
+                            : trialEndLabel
+                              ? `Trial ends ${trialEndLabel}. Limits stay at Pro until then.`
+                              : "Your trial is ending soon — limits match Pro until it ends."}
+                        </p>
+                      </div>
+                    )}
                     <div className="space-y-2">
                       <div className="flex flex-wrap items-center gap-2.5">
                         <span className="text-lg font-semibold leading-none tracking-tight">
@@ -836,17 +850,12 @@ export default function Settings() {
                               ? "Canceled"
                               : cancelScheduled
                                 ? "Canceling"
-                                : subscription.status}
+                                : trialActive || subscription.status === "trialing"
+                                  ? "Free trial"
+                                  : subscription.status}
                           </Badge>
                         )}
                       </div>
-                      {trialActive && currentPlan === "free" && (
-                        <p className="text-sm leading-relaxed text-muted-foreground">
-                          {trialDaysLeft > 0
-                            ? `${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left in your trial — limits match Pro until then.`
-                            : "Trial ending soon."}
-                        </p>
-                      )}
                     </div>
                     <dl className="space-y-3 border-t border-border pt-5 text-sm">
                       <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
