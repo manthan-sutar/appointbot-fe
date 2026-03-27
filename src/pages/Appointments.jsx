@@ -158,10 +158,12 @@ export default function Appointments() {
       setPages(data.pages || 1);
     } catch (err) {
       console.error('[Appointments] Load error:', err);
+      console.error('[Appointments] Response:', err.response);
       setRows([]);
       setTotal(0);
       setPages(1);
-      setError(err.response?.data?.error || 'Failed to load appointments. Please try again.');
+      const errMsg = err.response?.data?.error || err.message || 'Failed to load appointments. Please try again.';
+      setError(errMsg);
     } finally {
       setLoading(false);
     }
