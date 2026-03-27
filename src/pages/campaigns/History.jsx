@@ -225,7 +225,7 @@ export default function CampaignHistory() {
                     {(failureDataByCampaign[c.id]?.topReasons || []).length ? (
                       <div className="mb-2 flex flex-wrap gap-2 text-xs">
                         {failureDataByCampaign[c.id].topReasons.map((r, idx) => (
-                          <span key={`${r.reason}-${idx}`} className="rounded bg-background px-2 py-1 text-red-700 border-red-200">
+                          <span key={`${r.reason}-${idx}`} className="rounded bg-card px-2 py-1 text-red-700 border-red-200">
                             {r.count}× {r.reason}
                           </span>
                         ))}
@@ -234,7 +234,7 @@ export default function CampaignHistory() {
                       <div className="mb-2 text-xs text-red-700">No failure reasons found.</div>
                     )}
                     {(failureDataByCampaign[c.id]?.failedRecipients || []).length ? (
-                      <div className="max-h-40 space-y-1 overflow-y-auto rounded border-red-100 bg-background p-2">
+                      <div className="max-h-40 space-y-1 overflow-y-auto rounded border-red-100 bg-card p-2">
                         {failureDataByCampaign[c.id].failedRecipients.map((fr) => (
                           <div key={`${fr.customer_phone}-${fr.created_at}`} className="text-xs text-foreground">
                             <span className="font-mono">{fr.customer_phone}</span> — {fr.error_message || 'unknown error'}

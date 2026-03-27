@@ -21,57 +21,62 @@ const STATUS_VARIANT = {
   no_show: 'outline',
 };
 
+/** Fixed viewport ≈ two appointment rows; list scrolls inside. */
+const LIST_VIEWPORT_CLASS = 'h-[168px] overflow-y-auto overflow-x-hidden';
+
 function AppointmentListCard({ title, count, emptyTitle, emptySubtitle, items, tz, showDate = false, footerLink = false }) {
   return (
-    <Card className="flex flex-col">
-      <CardHeader className="flex flex-row items-center justify-between gap-2 pb-3">
+    <Card className="flex h-full min-h-[300px] flex-col overflow-hidden">
+      <CardHeader className="shrink-0 flex flex-row items-center justify-between gap-2 px-6 py-4">
         <CardTitle className="text-sm font-semibold">{title}</CardTitle>
         <span className="flex h-5 min-w-[20px] items-center justify-center rounded-full bg-foreground px-1.5 text-[11px] font-bold text-background">
           {count}
         </span>
       </CardHeader>
 
-      <CardContent className="flex-1 p-0">
-        {items.length === 0 ? (
-          <div className="px-6 py-10 text-center">
-            <p className="text-sm font-medium text-foreground">{emptyTitle}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{emptySubtitle}</p>
-          </div>
-        ) : (
-          <div className="divide-y">
-            {items.map((a) => (
-              <div key={a.id} className="flex items-center gap-3 px-6 py-3 transition-colors hover:bg-muted/40">
-                <div className="w-14 shrink-0 text-center">
-                  {showDate && (
-                    <div className="text-[10px] font-medium text-muted-foreground">
-                      {formatDate(a.scheduled_at, tz)}
-                    </div>
-                  )}
-                  <div className="text-sm font-semibold tabular-nums">{formatTime(a.scheduled_at, tz)}</div>
-                </div>
-                <div className="h-8 w-px bg-border" />
-                <div className="min-w-0 flex-1">
-                  <div className="truncate text-sm font-medium">{a.service_name || 'Appointment'}</div>
-                  <div className="mt-0.5 truncate text-xs text-muted-foreground">
-                    {a.customer_name || a.customer_phone}
-                    {a.staff_name ? ` · ${a.staff_name}` : ''}
+      <CardContent className="flex min-h-0 flex-1 flex-col p-0">
+        <div className={LIST_VIEWPORT_CLASS}>
+          {items.length === 0 ? (
+            <div className="flex h-full flex-col items-center justify-center px-6 py-6 text-center">
+              <p className="text-sm font-medium text-foreground">{emptyTitle}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{emptySubtitle}</p>
+            </div>
+          ) : (
+            <div className="divide-y">
+              {items.map((a) => (
+                <div key={a.id} className="flex items-center gap-3 px-6 py-3 transition-colors hover:bg-muted/40">
+                  <div className="w-14 shrink-0 text-center">
+                    {showDate && (
+                      <div className="text-[10px] font-medium text-muted-foreground">
+                        {formatDate(a.scheduled_at, tz)}
+                      </div>
+                    )}
+                    <div className="text-sm font-semibold tabular-nums">{formatTime(a.scheduled_at, tz)}</div>
                   </div>
+                  <div className="h-8 w-px bg-border" />
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-medium">{a.service_name || 'Appointment'}</div>
+                    <div className="mt-0.5 truncate text-xs text-muted-foreground">
+                      {a.customer_name || a.customer_phone}
+                      {a.staff_name ? ` · ${a.staff_name}` : ''}
+                    </div>
+                  </div>
+                  <Badge variant={STATUS_VARIANT[a.status] || 'outline'} className="shrink-0 capitalize text-[11px]">
+                    {a.status === 'no_show' ? 'No Show' : a.status}
+                  </Badge>
                 </div>
-                <Badge variant={STATUS_VARIANT[a.status] || 'outline'} className="shrink-0 capitalize text-[11px]">
-                  {a.status === 'no_show' ? 'No Show' : a.status}
-                </Badge>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
 
-        {footerLink && items.length > 0 && (
-          <div className="border-t px-6 py-3">
-            <Link to="/dashboard/appointments" className="text-xs font-medium text-foreground hover:underline">
+        <div className="shrink-0 border-t border-border px-6 py-2">
+          {footerLink && items.length > 0 ? (
+            <Link to="/dashboard/appointments" className="text-xs font-medium leading-none text-foreground hover:underline">
               View all appointments →
             </Link>
-          </div>
-        )}
+          ) : null}
+        </div>
       </CardContent>
     </Card>
   );
@@ -79,7 +84,7 @@ function AppointmentListCard({ title, count, emptyTitle, emptySubtitle, items, t
 
 export function AppointmentPanels({ todayAppointments, upcoming, tz }) {
   return (
-    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+    <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-stretch">
       <AppointmentListCard
         title="Today"
         count={todayAppointments.length}

@@ -230,7 +230,7 @@ export default function Campaigns() {
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Audience</label>
               <select
-                className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="w-full rounded-lg border bg-card px-3 py-2 text-sm outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 value={audienceType}
                 onChange={(e) => setAudienceType(e.target.value)}
               >
@@ -242,7 +242,7 @@ export default function Campaigns() {
             <div>
               <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Send Type</label>
               <select
-                className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="w-full rounded-lg border bg-card px-3 py-2 text-sm outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 value={sendMode}
                 onChange={(e) => setSendMode(e.target.value)}
               >
@@ -270,7 +270,7 @@ export default function Campaigns() {
                 rows={4}
                 maxLength={1024}
                 placeholder="Write your promotional message..."
-                className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                className="w-full rounded-lg border bg-card px-3 py-2 text-sm outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
               />
               <div className="mt-1 text-xs text-slate-500">{message.length}/1024</div>
             </div>
@@ -291,32 +291,32 @@ export default function Campaigns() {
         <CardHeader className="px-4 py-3 sm:px-5">
           <CardTitle className="text-base">Campaign Performance (30d)</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-3 px-4 pb-4 pt-4 text-sm sm:grid-cols-7 sm:px-5">
-          <div className="rounded-lg border border-slate-200 p-3">
+        <CardContent className="grid w-full grid-cols-2 gap-3 px-4 pb-4 pt-4 text-sm sm:grid-cols-7 sm:px-5">
+          <div className="flex min-w-0 flex-col rounded-lg border border-border bg-card p-3">
             <div className="text-xs text-slate-500">Campaigns</div>
             <div className="text-xl font-bold text-slate-900">{summary?.campaigns30d || 0}</div>
           </div>
-          <div className="rounded-lg border border-slate-200 p-3">
+          <div className="flex min-w-0 flex-col rounded-lg border border-border bg-card p-3">
             <div className="text-xs text-slate-500">Recipients</div>
             <div className="text-xl font-bold text-slate-900">{summary?.recipients30d || 0}</div>
           </div>
-          <div className="rounded-lg border border-slate-200 p-3">
+          <div className="flex min-w-0 flex-col rounded-lg border border-border bg-card p-3">
             <div className="text-xs text-slate-500">Sent</div>
             <div className="text-xl font-bold text-emerald-700">{summary?.sent30d || 0}</div>
           </div>
-          <div className="rounded-lg border border-slate-200 p-3">
+          <div className="flex min-w-0 flex-col rounded-lg border border-border bg-card p-3">
             <div className="text-xs text-slate-500">Failed</div>
             <div className="text-xl font-bold text-red-700">{summary?.failed30d || 0}</div>
           </div>
-          <div className="rounded-lg border border-slate-200 p-3">
+          <div className="flex min-w-0 flex-col rounded-lg border border-border bg-card p-3">
             <div className="text-xs text-slate-500">Delivery Rate</div>
             <div className="text-xl font-bold text-slate-900">{Number(summary?.deliveryRate30d || 0).toFixed(1)}%</div>
           </div>
-          <div className="rounded-lg border border-slate-200 p-3">
+          <div className="flex min-w-0 flex-col rounded-lg border border-border bg-card p-3">
             <div className="text-xs text-slate-500">Retry Pending</div>
             <div className="text-xl font-bold text-blue-700">{summary?.retryPending30d || 0}</div>
           </div>
-          <div className="rounded-lg border border-slate-200 p-3">
+          <div className="flex min-w-0 flex-col rounded-lg border border-border bg-card p-3">
             <div className="text-xs text-slate-500">Retry Exhausted</div>
             <div className="text-xl font-bold text-amber-700">{summary?.retryExhausted30d || 0}</div>
           </div>
@@ -349,7 +349,7 @@ export default function Campaigns() {
           ) : (
             <div className="space-y-2">
               {suppressedContacts.map((c) => (
-                <div key={c.customer_phone} className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2">
+                <div key={c.customer_phone} className="flex items-center justify-between rounded-lg border border-border bg-card px-3 py-2">
                   <div>
                     <div className="font-mono text-sm text-slate-900">{c.customer_phone}</div>
                     <div className="text-xs text-slate-500">
@@ -453,7 +453,7 @@ export default function Campaigns() {
                     {(failureDataByCampaign[c.id]?.topReasons || []).length ? (
                       <div className="mb-2 flex flex-wrap gap-2 text-xs">
                         {failureDataByCampaign[c.id].topReasons.map((r, idx) => (
-                          <span key={`${r.reason}-${idx}`} className="rounded border border-red-200 bg-background px-2 py-1 text-red-700">
+                          <span key={`${r.reason}-${idx}`} className="rounded border border-red-200 bg-card px-2 py-1 text-red-700">
                             {r.count}× {r.reason}
                           </span>
                         ))}
@@ -462,7 +462,7 @@ export default function Campaigns() {
                       <div className="mb-2 text-xs text-red-700">No failure reasons found.</div>
                     )}
                     {(failureDataByCampaign[c.id]?.failedRecipients || []).length ? (
-                      <div className="max-h-40 space-y-1 overflow-y-auto rounded border border-red-100 bg-background p-2">
+                      <div className="max-h-40 space-y-1 overflow-y-auto rounded border border-red-100 bg-card p-2">
                         {failureDataByCampaign[c.id].failedRecipients.map((fr) => (
                             <div key={`${fr.customer_phone}-${fr.created_at}`} className="text-xs text-foreground">
                             <span className="font-mono">{fr.customer_phone}</span> — {fr.error_message || 'unknown error'}

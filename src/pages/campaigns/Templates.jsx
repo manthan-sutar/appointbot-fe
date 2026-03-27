@@ -143,12 +143,6 @@ export default function CampaignTemplates() {
 
   return (
     <div className="ab-page max-w-6xl space-y-4">
-      {toast && (
-        <div className="fixed right-4 top-4 z-50 rounded-lg border bg-foreground px-4 py-2 text-sm font-medium text-background shadow-lg sm:right-6 sm:top-6">
-          {toast}
-        </div>
-      )}
-
       <div>
         <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">Campaign Templates</h1>
         <p className="mt-1 text-sm text-slate-600">
@@ -170,7 +164,7 @@ export default function CampaignTemplates() {
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">Send Type</label>
                 <select
-                  className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="w-full rounded-lg border bg-card px-3 py-2 text-sm outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   value={sendMode}
                   onChange={(e) => setSendMode(e.target.value)}
                 >
@@ -246,7 +240,7 @@ export default function CampaignTemplates() {
                   rows={5}
                   maxLength={1024}
                   placeholder="Template message text..."
-                  className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="w-full rounded-lg border bg-card px-3 py-2 text-sm outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
                 <div className="mt-1 text-xs text-slate-500">{contentText.length}/1024</div>
               </div>
@@ -279,7 +273,7 @@ export default function CampaignTemplates() {
             <div className="py-8 text-center text-sm text-slate-500">No templates yet. Create one above.</div>
           ) : (
             templates.map((t) => (
-              <div key={t.id} className="rounded-lg border bg-background p-3">
+              <div key={t.id} className="rounded-lg border bg-card p-3">
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="text-sm font-semibold text-slate-900">{t.name}</div>

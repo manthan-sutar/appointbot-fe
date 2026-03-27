@@ -9,9 +9,16 @@ export default {
   	extend: {
   		fontFamily: {
   			sans: [
+  				'DM Sans',
   				'Geist Variable',
   				'system-ui',
   				'-apple-system',
+  				'sans-serif'
+  			],
+  			display: [
+  				'Outfit',
+  				'DM Sans',
+  				'system-ui',
   				'sans-serif'
   			]
   		},

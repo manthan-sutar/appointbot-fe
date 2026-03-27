@@ -25,7 +25,8 @@ export function TabsList({ children, className }) {
   return (
     <div
       className={cn(
-        "flex h-10 w-full min-w-0 items-center gap-0.5 overflow-x-auto rounded-lg border border-slate-200 bg-slate-100 p-1 text-slate-600",
+        "flex h-10 w-full min-w-0 items-center gap-0.5 overflow-x-auto overflow-y-hidden rounded-lg border border-slate-200 bg-slate-100 p-1 text-slate-600",
+        "[scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
         "sm:w-auto sm:inline-flex sm:flex-initial",
         className,
       )}

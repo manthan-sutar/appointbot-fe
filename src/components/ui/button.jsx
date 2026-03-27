@@ -15,7 +15,7 @@ const variants = {
   secondary:
     "bg-secondary text-secondary-foreground hover:bg-secondary/80",
   outline:
-    "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
+    "border border-input bg-card hover:bg-accent hover:text-accent-foreground",
   ghost:
     "hover:bg-accent hover:text-accent-foreground",
 };

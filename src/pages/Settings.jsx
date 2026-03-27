@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate, Link } from "react-router-dom";
 import api from "../lib/api";
-import { cn } from "@/lib/utils";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Checkbox } from "../components/ui/checkbox";
@@ -16,98 +15,38 @@ import {
 import { Badge } from "../components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
 import { Toast } from "../components/shared/Toast";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "../components/ui/dialog";
+import { Separator } from "../components/ui/separator";
 
-const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const TABS = ["Business", "Working Hours", "No-show", "WhatsApp", "Widget"];
-const TAB_QUERY = ["business", "hours", "no-show", "whatsapp", "widget"];
-const TAB_FROM_QUERY = { business: 0, hours: 1, "no-show": 2, whatsapp: 3, widget: 4 };
-
-// Normalize time from API (e.g. "09:00:00" -> "09:00") for time inputs
-function toTimeValue(t) {
-  if (!t) return "";
-  const s = String(t).trim();
-  return s.length > 5 ? s.slice(0, 5) : s;
-}
-
-// Convert flat hours from API to per-day config (7 days, open/close/lunch) for one staff
-function hoursToStaffConfig(hours, staffId) {
-  const byStaff = (hours || []).filter((h) => h.staff_id === staffId);
-  return [0, 1, 2, 3, 4, 5, 6].map((day) => {
-    const slots = byStaff
-      .filter((h) => h.day_of_week === day)
-      .sort((a, b) => (a.start_time || "").localeCompare(b.start_time || ""));
-    if (slots.length === 0)
-      return {
-        day,
-        enabled: false,
-        open: "09:00",
-        close: "18:00",
-        lunchStart: "",
-        lunchEnd: "",
-      };
-    if (slots.length === 1)
-      return {
-        day,
-        enabled: true,
-        open: toTimeValue(slots[0].start_time),
-        close: toTimeValue(slots[0].end_time),
-        lunchStart: "",
-        lunchEnd: "",
-      };
-    return {
-      day,
-      enabled: true,
-      open: toTimeValue(slots[0].start_time),
-      close: toTimeValue(slots[1].end_time),
-      lunchStart: toTimeValue(slots[0].end_time),
-      lunchEnd: toTimeValue(slots[1].start_time),
-    };
-  });
-}
-
-// Convert per-day config to flat slots for API (one or two slots per day)
-function staffConfigToSlots(config) {
-  const slots = [];
-  for (const day of config) {
-    if (!day.enabled) continue;
-    const hasLunch =
-      day.lunchStart?.trim() && day.lunchEnd?.trim();
-    if (hasLunch) {
-      slots.push({
-        day_of_week: day.day,
-        start_time: day.open,
-        end_time: day.lunchStart.trim(),
-      });
-      slots.push({
-        day_of_week: day.day,
-        start_time: day.lunchEnd.trim(),
-        end_time: day.close,
-      });
-    } else {
-      slots.push({
-        day_of_week: day.day,
-        start_time: day.open,
-        end_time: day.close,
-      });
-    }
+function formatBillingDate(iso) {
+  if (!iso) return null;
+  try {
+    return new Date(iso).toLocaleDateString(undefined, { dateStyle: "long" });
+  } catch {
+    return null;
   }
-  return slots;
 }
+
+const TABS = ["Business", "No-show", "WhatsApp", "Widget", "Billing"];
+const TAB_QUERY = ["business", "no-show", "whatsapp", "widget", "billing"];
+const TAB_FROM_QUERY = { business: 0, "no-show": 1, whatsapp: 2, widget: 3, billing: 4 };
 
 export default function Settings() {
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
   const qTab = searchParams.get("tab");
   const initialTab =
     qTab && TAB_FROM_QUERY[qTab] !== undefined ? TAB_FROM_QUERY[qTab] : 0;
   const [tab, setTab] = useState(initialTab);
   const [business, setBusiness] = useState(null);
   const [subscription, setSubscription] = useState(null);
-  const [staff, setStaff] = useState([]);
-  const [hours, setHours] = useState([]);
-  // Per-staff, per-day working hours config (7 days: open/close/lunch). Synced from hours for the Working Hours tab.
-  const [staffHoursConfig, setStaffHoursConfig] = useState({});
-  // "Apply to all days" input values per staff (for Working Hours tab)
-  const [applyAllValues, setApplyAllValues] = useState({});
   const [waConfig, setWaConfig] = useState(null);
   const [bookNowCampaign, setBookNowCampaign] = useState("spring_launch");
   const [bookNowUtmSource, setBookNowUtmSource] = useState("instagram");
@@ -118,13 +57,20 @@ export default function Settings() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState("");
+  const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
+  const [cancelImmediate, setCancelImmediate] = useState(false);
+  const [cancelSubmitting, setCancelSubmitting] = useState(false);
 
   useEffect(() => {
     const t = searchParams.get("tab");
+    if (t === "hours") {
+      navigate("/dashboard/operate/working-hours", { replace: true });
+      return;
+    }
     if (t && TAB_FROM_QUERY[t] !== undefined) {
       setTab(TAB_FROM_QUERY[t]);
     }
-  }, [searchParams]);
+  }, [searchParams, navigate]);
 
   function selectTab(i) {
     setTab(i);
@@ -134,17 +80,13 @@ export default function Settings() {
   useEffect(() => {
     Promise.all([
       api.get("/business"),
-      api.get("/business/staff"),
-      api.get("/business/hours"),
       api.get("/business/whatsapp"),
       api.get("/business/no-show-settings"),
       api.get("/billing/subscription"),
       api.get("/business/widget-api-key"),
     ])
-      .then(([b, st, h, wa, ns, sub, wk]) => {
+      .then(([b, wa, ns, sub, wk]) => {
         setBusiness(b.data.business);
-        setStaff(st.data.staff);
-        setHours(h.data.hours);
         setWaConfig(wa.data.whatsapp || null);
         setNoShowSettings(ns.data.noShowSettings || null);
         setSubscription(sub.data.subscription || null);
@@ -154,15 +96,6 @@ export default function Settings() {
       })
       .finally(() => setLoading(false));
   }, []);
-
-  // Keep staffHoursConfig in sync with hours (for Working Hours tab)
-  useEffect(() => {
-    const next = {};
-    staff.forEach((m) => {
-      next[m.id] = hoursToStaffConfig(hours, m.id);
-    });
-    setStaffHoursConfig(next);
-  }, [hours, staff]);
 
   // When WhatsApp connect popup signals success, refresh WhatsApp config
   useEffect(() => {
@@ -182,26 +115,32 @@ export default function Settings() {
     setTimeout(() => setToast(""), 3000);
   }
 
-  // ── Billing / upgrade helpers ─────────────────────────────────────────────
-  async function startUpgrade(targetPlan) {
+  // ── Billing helpers ───────────────────────────────────────────────────────
+  async function refreshSubscription() {
     try {
-      const { data } = await api.post("/billing/checkout", { plan: targetPlan });
-      if (data.provider === "razorpay") {
-        if (data.shortUrl) {
-          window.location.href = data.shortUrl;
-        } else if (data.subscriptionId) {
-          window.open(
-            `https://dashboard.razorpay.com/app/subscriptions/${data.subscriptionId}`,
-            "_blank",
-          );
-        } else {
-          showToast("Payment session created. Please check Razorpay.");
-        }
-      } else {
-        showToast(data.error || "Payments are not configured for this environment.");
-      }
+      const { data } = await api.get("/billing/subscription");
+      setSubscription(data.subscription || null);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  async function confirmCancelSubscription() {
+    setCancelSubmitting(true);
+    try {
+      await api.post("/billing/cancel", { cancelAtPeriodEnd: !cancelImmediate });
+      await refreshSubscription();
+      setCancelDialogOpen(false);
+      setCancelImmediate(false);
+      showToast(
+        cancelImmediate
+          ? "Your subscription has been canceled."
+          : "Cancellation scheduled — you keep access until the end of this billing period.",
+      );
     } catch (err) {
-      showToast(err.response?.data?.error || "Failed to start upgrade");
+      showToast(err.response?.data?.error || "Could not cancel subscription");
+    } finally {
+      setCancelSubmitting(false);
     }
   }
 
@@ -224,57 +163,7 @@ export default function Settings() {
     }
   }
 
-  // Services and Staff management moved to Operate module
-
-  // ── Hours tab ─────────────────────────────────────────────────────────────
-  function updateStaffDay(staffId, dayIndex, field, value) {
-    setStaffHoursConfig((prev) => {
-      const config = prev[staffId] ? [...prev[staffId]] : hoursToStaffConfig(hours, staffId);
-      if (!config[dayIndex]) return prev;
-      config[dayIndex] = { ...config[dayIndex], [field]: value };
-      return { ...prev, [staffId]: config };
-    });
-  }
-
-  function toggleStaffDay(staffId, dayIndex) {
-    setStaffHoursConfig((prev) => {
-      const config = prev[staffId] ? [...prev[staffId]] : hoursToStaffConfig(hours, staffId);
-      if (!config[dayIndex]) return prev;
-      config[dayIndex] = { ...config[dayIndex], enabled: !config[dayIndex].enabled };
-      return { ...prev, [staffId]: config };
-    });
-  }
-
-  function applyAllDaysToStaff(staffId, open, close, lunchStart, lunchEnd) {
-    setStaffHoursConfig((prev) => {
-      const config = prev[staffId] ? [...prev[staffId]] : hoursToStaffConfig(hours, staffId);
-      const next = config.map((d) => ({
-        ...d,
-        open: open || d.open,
-        close: close || d.close,
-        lunchStart: lunchStart ?? d.lunchStart,
-        lunchEnd: lunchEnd ?? d.lunchEnd,
-      }));
-      return { ...prev, [staffId]: next };
-    });
-  }
-
-  async function saveHours(staffId) {
-    const config = staffHoursConfig[staffId];
-    if (!config) return;
-    setSaving(true);
-    try {
-      const slots = staffConfigToSlots(config);
-      await api.post("/business/hours", { staffId, hours: slots });
-      const { data } = await api.get("/business/hours");
-      setHours(data.hours);
-      showToast("Hours saved!");
-    } catch {
-      showToast("Failed to save hours");
-    } finally {
-      setSaving(false);
-    }
-  }
+  // Services, staff, and working hours are under Operate in the sidebar.
 
   // ── WhatsApp tab ───────────────────────────────────────────────────────────
   async function startWaConnect() {
@@ -354,13 +243,26 @@ export default function Settings() {
   }
 
   const inputClass =
-    "w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none ring-offset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
+    "w-full rounded-lg border bg-card px-3 py-2 text-sm outline-none ring-offset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring";
   const labelClass =
     "block text-xs font-semibold uppercase tracking-wide text-muted-foreground mb-1";
 
   const currentPlan = subscription?.plan || "free";
   const trialActive = subscription?.trialActive;
   const trialDaysLeft = subscription?.trialDaysLeft || 0;
+  const renewalLabel = subscription?.current_period_end
+    ? formatBillingDate(subscription.current_period_end)
+    : null;
+  const trialEndLabel = subscription?.trial_ends_at
+    ? formatBillingDate(subscription.trial_ends_at)
+    : null;
+  const hasRazorpayBilling =
+    subscription?.gateway === "razorpay" && !!subscription?.external_subscription_id;
+  const canManageCancel =
+    hasRazorpayBilling &&
+    subscription?.status !== "canceled" &&
+    !subscription?.cancel_at_period_end;
+  const cancelScheduled = !!subscription?.cancel_at_period_end;
   const backendBase = import.meta.env.VITE_API_URL || window.location.origin;
   const waPhone = String(waConfig?.displayPhone || business?.phone || "").replace(/[^0-9]/g, "");
   const bookNowText = `Hi, I want to book an appointment. #src=whatsapp_book_now #cmp=${(bookNowCampaign || "default").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-")} #utm=${(bookNowUtmSource || "unknown").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "-")}`;
@@ -372,6 +274,67 @@ export default function Settings() {
   return (
     <div className="ab-page relative max-w-4xl space-y-4">
       <Toast message={toast} visible={!!toast} />
+
+      <Dialog
+        open={cancelDialogOpen}
+        onOpenChange={(open) => {
+          setCancelDialogOpen(open);
+          if (!open) setCancelImmediate(false);
+        }}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Cancel subscription</DialogTitle>
+            <DialogDescription className="text-left leading-relaxed">
+              {cancelImmediate ? (
+                <>
+                  Your paid access ends right away and your workspace moves to the free limits. This
+                  cannot be undone from here — you can subscribe again anytime from Billing.
+                </>
+              ) : (
+                <>
+                  You keep your current plan benefits until{" "}
+                  <span className="font-medium text-foreground">
+                    {renewalLabel || "the end of this billing period"}
+                  </span>
+                  . After that, your workspace reverts to the free tier.
+                </>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-start gap-2 rounded-lg border bg-muted/40 px-3 py-2.5 text-sm">
+            <Checkbox
+              id="cancel-immediate"
+              checked={cancelImmediate}
+              onCheckedChange={(c) => setCancelImmediate(!!c)}
+            />
+            <label htmlFor="cancel-immediate" className="cursor-pointer leading-snug">
+              <span className="font-medium text-foreground">Cancel immediately</span>
+              <span className="block text-xs text-muted-foreground">
+                Lose paid features now instead of at the end of the period.
+              </span>
+            </label>
+          </div>
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setCancelDialogOpen(false)}
+              disabled={cancelSubmitting}
+            >
+              Keep subscription
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={confirmCancelSubscription}
+              disabled={cancelSubmitting}
+            >
+              {cancelSubmitting ? "Working…" : "Confirm cancellation"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="flex flex-col gap-3 sm:gap-4">
         <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">
@@ -398,21 +361,17 @@ export default function Settings() {
         <Card className="border shadow-sm">
           <CardHeader className="px-4 py-3 sm:px-5 space-y-2">
             <CardTitle className="text-base">Business Information</CardTitle>
-            {/* Trial / plan badge */}
-            {subscription && (
-              <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                <Badge variant="outline" className="border text-foreground">
-                  Plan: {currentPlan === "business" ? "Business" : currentPlan === "pro" ? "Pro" : "Free"}
-                </Badge>
-                {trialActive && currentPlan === "free" && (
-                  <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
-                    {trialDaysLeft > 0
-                      ? `${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left in trial`
-                      : "Trial ending soon"}
-                  </span>
-                )}
-              </div>
-            )}
+            <p className="text-xs text-muted-foreground">
+              Subscription and invoices are managed in the{" "}
+              <button
+                type="button"
+                className="font-medium text-foreground underline underline-offset-2 hover:text-foreground"
+                onClick={() => selectTab(4)}
+              >
+                Billing
+              </button>{" "}
+              tab.
+            </p>
           </CardHeader>
           <CardContent className="px-4 pb-4 pt-4 sm:px-5">
             <form onSubmit={saveBusiness} className="space-y-4 text-sm">
@@ -496,72 +455,6 @@ export default function Settings() {
                 {saving ? "Saving…" : "Save Changes"}
               </Button>
             </form>
-
-            {/* Simple plans section */}
-            <div className="mt-6 border-t pt-4">
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                  Plans
-                </span>
-                {trialActive && currentPlan === "free" && (
-                  <span className="text-[11px] text-muted-foreground">
-                    Your Pro/Business billing will start after your trial ends.
-                  </span>
-                )}
-              </div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                {/* Pro */}
-                <div className="flex flex-col rounded-lg border bg-card p-4 text-xs">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="text-sm font-semibold">Pro</div>
-                      <div className="mt-0.5 text-[11px] text-muted-foreground">For growing clinics &amp; salons</div>
-                    </div>
-                    <div className="text-sm font-bold tabular-nums">₹999/mo</div>
-                  </div>
-                  <ul className="mt-3 space-y-1.5 text-[11px] text-muted-foreground">
-                    <li>• 10 staff members</li>
-                    <li>• 20 services</li>
-                    <li>• 500 bookings / month</li>
-                  </ul>
-                  <Button
-                    type="button"
-                    size="sm"
-                    className="mt-4 w-full text-xs"
-                    onClick={() => startUpgrade("pro")}
-                    disabled={currentPlan === "pro" || currentPlan === "business"}
-                  >
-                    {currentPlan === "pro" ? "Current plan" : "Choose Pro"}
-                  </Button>
-                </div>
-
-                {/* Business — uses a heavier border to signal "recommended" */}
-                <div className="flex flex-col rounded-lg border-2 border-foreground bg-card p-4 text-xs">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="text-sm font-semibold">Business</div>
-                      <div className="mt-0.5 text-[11px] text-muted-foreground">For multi&#8209;location teams</div>
-                    </div>
-                    <div className="text-sm font-bold tabular-nums">₹2,499/mo</div>
-                  </div>
-                  <ul className="mt-3 space-y-1.5 text-[11px] text-muted-foreground">
-                    <li>• Unlimited staff &amp; services</li>
-                    <li>• Unlimited bookings</li>
-                    <li>• Priority support</li>
-                  </ul>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    className="mt-4 w-full text-xs"
-                    onClick={() => startUpgrade("business")}
-                    disabled={currentPlan === "business"}
-                  >
-                    {currentPlan === "business" ? "Current plan" : "Choose Business"}
-                  </Button>
-                </div>
-              </div>
-            </div>
           </CardContent>
         </Card>
       )}
@@ -569,7 +462,7 @@ export default function Settings() {
       {/* Services and Staff tabs removed - now in Operate module */}
 
       {/* ── No-show ── */}
-      {tab === 2 && (
+      {tab === 1 && (
         <Card className="border shadow-sm">
           <CardHeader className="px-4 py-3 sm:px-5">
             <CardTitle className="text-base text-foreground">No-show Prevention</CardTitle>
@@ -639,7 +532,7 @@ export default function Settings() {
       )}
 
       {/* ── WhatsApp ── */}
-      {tab === 3 && (
+      {tab === 2 && (
         <Card className="border shadow-sm">
           <CardHeader className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
             <CardTitle className="text-base text-foreground">
@@ -685,7 +578,7 @@ export default function Settings() {
                 <div className="rounded-lg border bg-muted/40 px-4 py-3 text-sm text-foreground">
                   WhatsApp is linked to your business. Customers can message this number to book appointments. Use <strong>Update number</strong> above to link a different WhatsApp Business number.
                 </div>
-                <div className="space-y-3 rounded-lg border bg-background px-4 py-3">
+                <div className="space-y-3 rounded-lg border bg-card px-4 py-3">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     WhatsApp Book Now Link (tracked)
                   </p>
@@ -770,7 +663,7 @@ export default function Settings() {
       )}
 
       {/* ── Widget ── */}
-      {tab === 4 && (
+      {tab === 3 && (
         <Card className="border shadow-sm">
           <CardHeader className="px-4 py-3 sm:px-5">
             <CardTitle className="text-base text-foreground">Chat Widget</CardTitle>
@@ -878,7 +771,7 @@ export default function Settings() {
 
             {/* Usage Instructions */}
             {widgetApiKey && (
-              <div className="space-y-2 rounded-lg border bg-background px-4 py-3">
+              <div className="space-y-2 rounded-lg border bg-card px-4 py-3">
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                   How to Use
                 </p>
@@ -904,178 +797,140 @@ export default function Settings() {
         </Card>
       )}
 
-      {/* ── Hours ── */}
-      {tab === 1 && (
-        <div className="space-y-6">
-          <p className="text-sm text-muted-foreground">
-            Set open/close and optional lunch break per day. Appointments cannot be booked during lunch.
-          </p>
-          {staff
-            .filter((m) => m.active)
-            .map((member) => {
-              const config = staffHoursConfig[member.id] ?? hoursToStaffConfig(hours, member.id);
-              const applyAll = applyAllValues[member.id] ?? { open: "09:00", close: "18:00", lunchStart: "", lunchEnd: "" };
-              return (
-                <Card
-                  key={member.id}
-                  className="border shadow-sm"
+      {/* ── Billing ── */}
+      {tab === 4 && (
+        <div className="space-y-4">
+          <Card className="border shadow-sm">
+            <CardHeader className="space-y-2 px-5 pb-2 pt-6 sm:px-6">
+              <CardTitle className="text-base leading-snug">Current plan</CardTitle>
+              <p className="text-xs leading-relaxed text-muted-foreground">
+                View your plan status, next billing date, and cancellation options. To change plans,
+                open{" "}
+                <Link
+                  to="/pricing"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="font-medium text-foreground underline underline-offset-2"
                 >
-                  <CardHeader className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:px-5">
-                    <CardTitle className="text-base">
-                      {member.name}
-                      {member.role ? ` — ${member.role}` : ""}
-                    </CardTitle>
-                    <Button
-                      type="button"
-                      size="sm"
-                      disabled={saving}
-                      onClick={() => saveHours(member.id)}
-                    >
-                      Save
-                    </Button>
-                  </CardHeader>
-                  <CardContent className="space-y-4 px-4 pb-4 pt-4 text-sm sm:px-5">
-                    {/* Apply to all days */}
-                    <div className="flex flex-wrap items-center gap-3 rounded-lg border-dashed border bg-muted/50/50 px-3 py-3">
-                      <span className="text-xs font-medium text-muted-foreground whitespace-nowrap">
-                        Apply to all days:
-                      </span>
-                      <Input
-                        type="time"
-                        className="h-8 w-28 text-xs"
-                        value={applyAll.open}
-                        onChange={(e) =>
-                          setApplyAllValues((prev) => ({
-                            ...prev,
-                            [member.id]: { ...(prev[member.id] || applyAll), open: e.target.value },
-                          }))
-                        }
-                      />
-                      <Input
-                        type="time"
-                        className="h-8 w-28 text-xs"
-                        value={applyAll.close}
-                        onChange={(e) =>
-                          setApplyAllValues((prev) => ({
-                            ...prev,
-                            [member.id]: { ...(prev[member.id] || applyAll), close: e.target.value },
-                          }))
-                        }
-                      />
-                      <Input
-                        type="time"
-                        className="h-8 w-28 text-xs"
-                        placeholder="Lunch from"
-                        value={applyAll.lunchStart}
-                        onChange={(e) =>
-                          setApplyAllValues((prev) => ({
-                            ...prev,
-                            [member.id]: { ...(prev[member.id] || applyAll), lunchStart: e.target.value },
-                          }))
-                        }
-                      />
-                      <Input
-                        type="time"
-                        className="h-8 w-28 text-xs"
-                        placeholder="Lunch to"
-                        value={applyAll.lunchEnd}
-                        onChange={(e) =>
-                          setApplyAllValues((prev) => ({
-                            ...prev,
-                            [member.id]: { ...(prev[member.id] || applyAll), lunchEnd: e.target.value },
-                          }))
-                        }
-                      />
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
-                        className="h-8 text-xs"
-                        onClick={() =>
-                          applyAllDaysToStaff(
-                            member.id,
-                            applyAll.open,
-                            applyAll.close,
-                            applyAll.lunchStart,
-                            applyAll.lunchEnd
-                          )
-                        }
-                      >
-                        Apply to all days
-                      </Button>
-                    </div>
-
-                    {/* Per-day table */}
-                    <div className="rounded-lg border overflow-hidden">
-                      <div className="grid grid-cols-[minmax(3rem,1fr)_1fr_1fr_1fr_1fr] gap-2 px-3 py-2 bg-muted/80 text-xs font-medium text-muted-foreground border-b border">
-                        <span>Day</span>
-                        <span>Open</span>
-                        <span>Close</span>
-                        <span>Lunch start</span>
-                        <span>Lunch end</span>
+                  pricing
+                </Link>
+                .
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-6 px-5 pb-6 pt-4 sm:px-6">
+              <div className="rounded-xl border border-border/80 bg-card px-5 py-6 sm:px-6 sm:py-7">
+                <div className="flex flex-wrap items-start justify-between gap-4">
+                  <div className="min-w-0 flex-1 space-y-5">
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2.5">
+                        <span className="text-lg font-semibold leading-none tracking-tight">
+                          {currentPlan === "business"
+                            ? "Business"
+                            : currentPlan === "pro"
+                              ? "Pro"
+                              : "Free"}
+                        </span>
+                        {subscription?.status && (
+                          <Badge variant="secondary" className="font-normal capitalize">
+                            {subscription.status === "canceled"
+                              ? "Canceled"
+                              : cancelScheduled
+                                ? "Canceling"
+                                : subscription.status}
+                          </Badge>
+                        )}
                       </div>
-                      {config.map((day) => (
-                        <div
-                          key={day.day}
-                          className={cn(
-                            "grid grid-cols-[minmax(3rem,1fr)_1fr_1fr_1fr_1fr] gap-2 px-3 py-2 items-center border-b border last:border-b-0",
-                            !day.enabled && "bg-muted/50/50 opacity-90"
-                          )}
-                        >
-                          <div className="flex items-center gap-2">
-                            <button
-                              type="button"
-                              className={cn(
-                                "rounded border px-2 py-1 text-xs font-medium transition-colors",
-                                day.enabled
-                                  ? "border-foreground bg-foreground text-background"
-                                  : "border bg-background text-muted-foreground"
-                              )}
-                              onClick={() => toggleStaffDay(member.id, day.day)}
-                            >
-                              {day.enabled ? "Open" : "Closed"}
-                            </button>
-                            <span className="text-xs font-medium text-foreground w-8">
-                              {DAYS[day.day]}
-                            </span>
-                          </div>
-                          <Input
-                            type="time"
-                            className="h-8 text-xs w-full max-w-[6rem]"
-                            value={day.open}
-                            onChange={(e) => updateStaffDay(member.id, day.day, "open", e.target.value)}
-                            disabled={!day.enabled}
-                          />
-                          <Input
-                            type="time"
-                            className="h-8 text-xs w-full max-w-[6rem]"
-                            value={day.close}
-                            onChange={(e) => updateStaffDay(member.id, day.day, "close", e.target.value)}
-                            disabled={!day.enabled}
-                          />
-                          <Input
-                            type="time"
-                            className="h-8 text-xs w-full max-w-[6rem]"
-                            placeholder="—"
-                            value={day.lunchStart}
-                            onChange={(e) => updateStaffDay(member.id, day.day, "lunchStart", e.target.value)}
-                            disabled={!day.enabled}
-                          />
-                          <Input
-                            type="time"
-                            className="h-8 text-xs w-full max-w-[6rem]"
-                            placeholder="—"
-                            value={day.lunchEnd}
-                            onChange={(e) => updateStaffDay(member.id, day.day, "lunchEnd", e.target.value)}
-                            disabled={!day.enabled}
-                          />
-                        </div>
-                      ))}
+                      {trialActive && currentPlan === "free" && (
+                        <p className="text-sm leading-relaxed text-muted-foreground">
+                          {trialDaysLeft > 0
+                            ? `${trialDaysLeft} day${trialDaysLeft === 1 ? "" : "s"} left in your trial — limits match Pro until then.`
+                            : "Trial ending soon."}
+                        </p>
+                      )}
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                    <dl className="space-y-3 border-t border-border pt-5 text-sm">
+                      <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+                        <dt className="text-muted-foreground">
+                          {cancelScheduled ? "Current period ends" : "Next billing date"}
+                        </dt>
+                        <dd className="font-medium tabular-nums text-foreground text-right">
+                          {renewalLabel
+                            ? renewalLabel
+                            : trialActive && trialEndLabel && !hasRazorpayBilling
+                              ? `After trial (${trialEndLabel})`
+                              : "—"}
+                        </dd>
+                      </div>
+                      {trialActive && trialEndLabel && (
+                        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 text-xs">
+                          <dt className="text-muted-foreground">Trial ends</dt>
+                          <dd className="tabular-nums text-muted-foreground text-right">{trialEndLabel}</dd>
+                        </div>
+                      )}
+                    </dl>
+                    {cancelScheduled && renewalLabel && (
+                      <p className="text-sm leading-relaxed text-amber-800 dark:text-amber-200/90">
+                        Access until{" "}
+                        <span className="font-medium">{renewalLabel}</span>, then your workspace
+                        moves to the free tier.
+                      </p>
+                    )}
+                    {subscription?.status === "canceled" && (
+                      <p className="text-sm leading-relaxed text-muted-foreground">
+                        You are on the free tier. Open{" "}
+                        <Link
+                          to="/pricing"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-medium text-foreground underline underline-offset-2"
+                        >
+                          pricing
+                        </Link>{" "}
+                        to subscribe again.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <Separator className="bg-border" />
+
+              <div className="rounded-lg border border-destructive/25 bg-destructive/5 px-5 py-5 sm:px-6 sm:py-6">
+                <div className="space-y-2.5">
+                  <h3 className="text-sm font-semibold leading-snug text-foreground">
+                    Cancel subscription
+                  </h3>
+                  <p className="text-xs leading-relaxed text-muted-foreground">
+                    {canManageCancel
+                      ? "Stop future charges. You can keep access until the end of the period, or end immediately."
+                      : cancelScheduled
+                        ? "You already have cancellation scheduled. Your access continues until the date above."
+                        : subscription?.status === "canceled"
+                          ? "Your paid subscription has ended. You are on the free plan."
+                          : !hasRazorpayBilling
+                            ? "Paid cancellation applies after you subscribe with a card through checkout. Trial and free plans do not require cancellation."
+                            : "No further cancellation action is available for this billing profile."}
+                  </p>
+                </div>
+                {canManageCancel && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-5 border-destructive/50 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    onClick={() => setCancelDialogOpen(true)}
+                  >
+                    Cancel subscription
+                  </Button>
+                )}
+              </div>
+
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                Payments are processed securely by Razorpay. For receipts and payment history, use the
+                confirmation email from Razorpay or your bank statement.
+              </p>
+            </CardContent>
+          </Card>
         </div>
       )}
     </div>

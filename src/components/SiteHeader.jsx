@@ -8,7 +8,9 @@ export function SiteHeader({ title, owner, onLogout }) {
     <header className="sticky top-0 z-10 flex h-14 shrink-0 items-center gap-2 border-b bg-background/95 backdrop-blur-sm px-4 lg:px-6">
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="mx-1 h-4" />
-      <h1 className="flex-1 min-w-0 truncate text-sm font-semibold">{title}</h1>
+      <h1 className="flex-1 min-w-0 truncate font-display text-sm font-semibold tracking-tight">
+        {title}
+      </h1>
 
       <div className="ml-auto flex shrink-0 items-center gap-2">
         <span className="hidden sm:block max-w-[160px] truncate text-xs text-muted-foreground">

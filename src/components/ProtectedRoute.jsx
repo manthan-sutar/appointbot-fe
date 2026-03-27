@@ -7,12 +7,9 @@ export default function ProtectedRoute({ children }) {
 
   if (loading) {
     return (
-      <div
-        className="flex min-h-screen items-center justify-center text-sm text-slate-500"
-        style={{ minHeight: "100vh", backgroundColor: "#f8fafc", color: "#64748b" }}
-      >
+      <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
         <span className="inline-flex items-center gap-2">
-          <span className="h-2 w-2 animate-pulse rounded-full bg-slate-400" />
+          <span className="h-2 w-2 animate-pulse rounded-full bg-primary" />
           Loading…
         </span>
       </div>

@@ -60,7 +60,7 @@ export default function Services() {
   }
 
   const inputClass =
-    'w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none ring-offset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
+    'w-full rounded-lg border bg-card px-3 py-2 text-sm outline-none ring-offset-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring';
 
   return (
     <div className="ab-page relative max-w-5xl space-y-4">

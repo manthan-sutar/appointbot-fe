@@ -12,6 +12,7 @@ function getPageTitle(pathname) {
   if (pathname.startsWith('/dashboard/settings')) return 'Settings';
   if (pathname.startsWith('/dashboard/operate/services')) return 'Services';
   if (pathname.startsWith('/dashboard/operate/staff')) return 'Staff';
+  if (pathname.startsWith('/dashboard/operate/working-hours')) return 'Working hours';
   if (pathname.startsWith('/dashboard/campaigns/create')) return 'Create Campaign';
   if (pathname.startsWith('/dashboard/campaigns/history')) return 'Campaign History';
   if (pathname.startsWith('/dashboard/campaigns/performance')) return 'Performance';

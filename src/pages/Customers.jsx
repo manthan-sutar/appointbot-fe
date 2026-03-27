@@ -159,7 +159,7 @@ export default function Customers() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
-        <Card className="overflow-hidden rounded-xl border bg-background shadow-sm">
+        <Card className="overflow-hidden rounded-xl border bg-card shadow-sm">
           <div className="flex flex-wrap gap-2 border-b border p-3">
             <input
               className="min-w-[220px] flex-1 rounded-lg border px-3 py-2 text-sm outline-none"
@@ -223,7 +223,7 @@ export default function Customers() {
           )}
         </Card>
 
-        <Card className="rounded-xl border bg-background p-3 shadow-sm">
+        <Card className="rounded-xl border bg-card p-3 shadow-sm">
           {!selectedPhone ? (
             <div className="p-2 text-sm text-muted-foreground">Select a customer to view profile and notes.</div>
           ) : detailLoading ? (

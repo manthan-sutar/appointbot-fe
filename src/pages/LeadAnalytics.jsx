@@ -52,7 +52,7 @@ export default function LeadAnalytics() {
   return (
     <div className="ab-page max-w-5xl space-y-6">
       <p className="text-sm text-muted-foreground">
-        Funnel, sources, and campaign / UTM attribution for website chat and tracked links.
+        Lead sources group web chat (full page), embedded widget, and WhatsApp. Campaign and UTM rows use tags from chat links and the widget.
       </p>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -104,7 +104,7 @@ export default function LeadAnalytics() {
                   key={s.source}
                   className="flex items-center justify-between rounded-md border bg-card px-3 py-2 text-sm"
                 >
-                  <span className="capitalize text-foreground">{String(s.source).replace(/_/g, ' ')}</span>
+                  <span className="text-foreground">{formatLeadSourceLabel(s.source)}</span>
                   <span className="font-semibold tabular-nums">{s.leads}</span>
                 </div>
               ))
@@ -130,7 +130,7 @@ export default function LeadAnalytics() {
                     onClick={() => loadAttributionWindow(d)}
                     className={`rounded px-2 py-0.5 text-xs font-medium transition-colors ${
                       attributionWindowDays === d
-                        ? 'bg-background text-foreground shadow-sm'
+                        ? 'bg-card text-foreground shadow-sm'
                         : 'text-muted-foreground hover:text-foreground'
                     }`}
                   >
@@ -185,6 +185,22 @@ export default function LeadAnalytics() {
       </div>
     </div>
   );
+}
+
+function formatLeadSourceLabel(source) {
+  const map = {
+    web_chat_page: 'Web chat (full page)',
+    web_chat_widget: 'Web widget (embedded)',
+    whatsapp: 'WhatsApp',
+    chat_page: 'Web chat (full page)',
+    website_chat_widget: 'Web widget (embedded)',
+    unknown: 'Unknown',
+  };
+  const k = String(source || '').toLowerCase();
+  if (map[k]) return map[k];
+  return String(source || 'unknown')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
 function FunnelBadge({ color, label, value }) {

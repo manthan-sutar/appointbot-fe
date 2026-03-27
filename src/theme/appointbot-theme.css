@@ -1,0 +1,106 @@
+/**
+ * Appointbot dashboard theme — aligned with shared chat UI
+ * (appointbot-be/public/widget-embed.css, chat.html).
+ *
+ * Shadcn tokens use HSL components (no hsl() wrapper). Brand hex mirrors live in --ab-* for docs and custom CSS.
+ */
+@layer base {
+  :root {
+    /* ── Brand mirrors (match chat :host / :root) ───────────────────────── */
+    --ab-bg: #f1f5f9;
+    --ab-surface: #ffffff;
+    --ab-text: #0f172a;
+    --ab-muted: #64748b;
+    --ab-accent: #0d9488;
+    --ab-accent-dark: #0f766e;
+    --ab-user: #ecfdf5;
+    --ab-user-border: #99f6e4;
+    --ab-header: linear-gradient(135deg, #0f766e 0%, #115e59 48%, #134e4a 100%);
+    --ab-radius-chat: 18px;
+    --ab-radius-chat-sm: 14px;
+
+    /* ── shadcn semantic (light) — teal primary, slate neutrals ───────── */
+    --background: 210 40% 96%;
+    --foreground: 222 47% 11%;
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+    --primary: 173 84% 32%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 166 28% 94%;
+    --secondary-foreground: 222 47% 15%;
+    --muted: 210 35% 94%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 166 32% 93%;
+    --accent-foreground: 222 47% 13%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 214 32% 90%;
+    --input: 214 32% 90%;
+    --ring: 173 72% 38%;
+    --radius: 0.75rem;
+
+    --chart-1: 173 84% 38%;
+    --chart-2: 180 55% 36%;
+    --chart-3: 168 45% 32%;
+    --chart-4: 199 50% 48%;
+    --chart-5: 158 52% 42%;
+
+    --sidebar-background: 210 38% 97%;
+    --sidebar-foreground: 222 40% 18%;
+    --sidebar-primary: 173 84% 32%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 166 28% 93%;
+    --sidebar-accent-foreground: 222 47% 13%;
+    --sidebar-border: 214 28% 90%;
+    --sidebar-ring: 173 72% 38%;
+  }
+
+  .dark {
+    --ab-bg: #0c1917;
+    --ab-surface: #0f1f1c;
+    --ab-text: #ecfdf5;
+    --ab-muted: #94a3b8;
+    --ab-accent: #2dd4bf;
+    --ab-accent-dark: #14b8a6;
+    --ab-user: #134e4a;
+    --ab-user-border: #115e59;
+    --ab-header: linear-gradient(135deg, #134e4a 0%, #115e59 52%, #0f766e 100%);
+
+    --background: 180 18% 9%;
+    --foreground: 210 40% 96%;
+    --card: 180 16% 11%;
+    --card-foreground: 210 40% 96%;
+    --popover: 180 16% 11%;
+    --popover-foreground: 210 40% 96%;
+    --primary: 173 65% 48%;
+    --primary-foreground: 180 22% 8%;
+    --secondary: 180 14% 16%;
+    --secondary-foreground: 210 35% 92%;
+    --muted: 180 12% 18%;
+    --muted-foreground: 215 20% 65%;
+    --accent: 180 14% 18%;
+    --accent-foreground: 210 40% 96%;
+    --destructive: 0 62% 45%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 180 12% 20%;
+    --input: 180 12% 20%;
+    --ring: 173 55% 50%;
+
+    --chart-1: 173 70% 55%;
+    --chart-2: 180 50% 50%;
+    --chart-3: 168 45% 45%;
+    --chart-4: 199 55% 58%;
+    --chart-5: 158 48% 48%;
+
+    --sidebar-background: 180 20% 8%;
+    --sidebar-foreground: 210 35% 92%;
+    --sidebar-primary: 173 65% 48%;
+    --sidebar-primary-foreground: 180 22% 8%;
+    --sidebar-accent: 180 14% 15%;
+    --sidebar-accent-foreground: 210 40% 96%;
+    --sidebar-border: 180 12% 18%;
+    --sidebar-ring: 173 55% 50%;
+  }
+}

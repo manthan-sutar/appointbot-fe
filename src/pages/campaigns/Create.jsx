@@ -14,7 +14,14 @@ import {
 } from '../../components/ui/select';
 import { PageHeader } from '../../components/shared/PageHeader';
 import { Toast, useToastMessage } from '../../components/shared/Toast';
-import { Alert, AlertDescription, AlertTitle } from '../../components/ui/alert';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '../../components/ui/dialog';
+import { Info } from 'lucide-react';
 
 const AUDIENCE_OPTIONS = [
   { value: 'all_leads', label: 'All leads' },
@@ -76,36 +83,54 @@ export default function CreateCampaign() {
       <PageHeader
         title="Create Campaign"
         description="Build a WhatsApp campaign with targeting, scheduling, and delivery tracking."
+        actions={
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-8 w-8 shrink-0 rounded-full"
+                aria-label="Meta WhatsApp requirements"
+              >
+                <Info className="h-4 w-4" />
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-lg gap-4 bg-card">
+              <DialogHeader>
+                <DialogTitle>Meta WhatsApp requirements</DialogTitle>
+              </DialogHeader>
+              <div className="text-sm text-muted-foreground">
+                <ul className="list-disc space-y-2 pl-4">
+                  <li>
+                    <strong className="text-foreground">Bulk / cold outreach:</strong> use{' '}
+                    <strong className="text-foreground">Meta template</strong> with an approved template from Meta
+                    Business Manager (Marketing or Utility). Freeform text only works inside the 24-hour chat window.
+                  </li>
+                  <li>
+                    <strong className="text-foreground">Error 131030 (number not in allowed list):</strong> in{' '}
+                    <em>Development</em>, add each test number under Meta Developer → your app → WhatsApp → API
+                    Setup. For real customers at scale, complete Business Verification, publish the app (Live), and use
+                    templates.
+                  </li>
+                </ul>
+                <p className="mt-3 text-xs sm:text-sm">
+                  Full checklist: <code className="rounded bg-muted px-1">docs/WHATSAPP_CAMPAIGNS.md</code> (backend
+                  repo) ·{' '}
+                  <a
+                    href="https://developers.facebook.com/docs/whatsapp/cloud-api/support/error-codes/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-medium text-foreground underline-offset-4 hover:underline"
+                  >
+                    Meta error codes
+                  </a>
+                </p>
+              </div>
+            </DialogContent>
+          </Dialog>
+        }
       />
-
-      <Alert>
-        <AlertTitle className="text-sm">Meta WhatsApp requirements</AlertTitle>
-        <AlertDescription className="text-xs text-muted-foreground sm:text-sm">
-          <ul className="mt-2 list-disc space-y-1 pl-4">
-            <li>
-              <strong className="text-foreground">Bulk / cold outreach:</strong> use{' '}
-              <strong className="text-foreground">Meta template</strong> with an approved template from Meta Business
-              Manager (Marketing or Utility). Freeform text only works inside the 24-hour chat window.
-            </li>
-            <li>
-              <strong className="text-foreground">Error 131030 (number not in allowed list):</strong> in{' '}
-              <em>Development</em>, add each test number under Meta Developer → your app → WhatsApp → API Setup. For
-              real customers at scale, complete Business Verification, publish the app (Live), and use templates.
-            </li>
-          </ul>
-          <p className="mt-2">
-            Full checklist: <code className="rounded bg-muted px-1">docs/WHATSAPP_CAMPAIGNS.md</code> (backend repo) ·{' '}
-            <a
-              href="https://developers.facebook.com/docs/whatsapp/cloud-api/support/error-codes/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="font-medium text-foreground underline-offset-4 hover:underline"
-            >
-              Meta error codes
-            </a>
-          </p>
-        </AlertDescription>
-      </Alert>
 
       <Card className="border shadow-sm">
         <CardHeader className="px-4 py-3 sm:px-5">
@@ -122,7 +147,7 @@ export default function CreateCampaign() {
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Audience</label>
                 <select
-                  className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="w-full rounded-lg border bg-card px-3 py-2 text-sm outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   value={audienceType}
                   onChange={(e) => setAudienceType(e.target.value)}
                 >
@@ -135,7 +160,7 @@ export default function CreateCampaign() {
               <div>
                 <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Send Type</label>
                 <select
-                  className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="w-full rounded-lg border bg-card px-3 py-2 text-sm outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   value={sendMode}
                   onChange={(e) => setSendMode(e.target.value)}
                 >
@@ -165,7 +190,7 @@ export default function CreateCampaign() {
                   rows={5}
                   maxLength={1024}
                   placeholder="Write your promotional message..."
-                  className="w-full rounded-lg border bg-background px-3 py-2 text-sm outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  className="w-full rounded-lg border bg-card px-3 py-2 text-sm outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
                 <div className="mt-1 text-xs text-muted-foreground">{message.length}/1024</div>
               </div>

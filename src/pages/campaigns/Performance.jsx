@@ -72,12 +72,6 @@ export default function CampaignPerformance() {
 
   return (
     <div className="ab-page max-w-6xl space-y-4">
-      {toast && (
-        <div className="fixed right-4 top-4 z-50 rounded-lg border bg-foreground px-4 py-2 text-sm font-medium text-background shadow-lg sm:right-6 sm:top-6">
-          {toast}
-        </div>
-      )}
-
       <div className="flex items-start justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">Campaign Performance</h1>
@@ -94,38 +88,38 @@ export default function CampaignPerformance() {
         <CardHeader className="px-4 py-3 sm:px-5">
           <CardTitle className="text-base">Campaign Metrics (30d)</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-3 px-4 pb-4 pt-4 text-sm sm:grid-cols-7 sm:px-5">
+        <CardContent className="grid w-full grid-cols-2 gap-3 px-4 pb-4 pt-4 text-sm sm:grid-cols-7 sm:px-5">
           {loading ? (
             <div className="col-span-7 text-sm text-slate-500">Loading metrics…</div>
           ) : error ? (
             <div className="col-span-7 text-sm text-red-600">{error}</div>
           ) : (
             <>
-              <div className="rounded-lg border bg-background p-3">
+              <div className="flex min-w-0 flex-col rounded-lg border bg-card p-3">
                 <div className="text-xs text-slate-500">Campaigns</div>
                 <div className="mt-1 text-xl font-bold text-slate-900">{summary?.campaigns30d || 0}</div>
               </div>
-              <div className="rounded-lg border bg-background p-3">
+              <div className="flex min-w-0 flex-col rounded-lg border bg-card p-3">
                 <div className="text-xs text-slate-500">Recipients</div>
                 <div className="mt-1 text-xl font-bold text-slate-900">{summary?.recipients30d || 0}</div>
               </div>
-              <div className="rounded-lg border bg-background p-3">
+              <div className="flex min-w-0 flex-col rounded-lg border bg-card p-3">
                 <div className="text-xs text-slate-500">Sent</div>
                 <div className="mt-1 text-xl font-bold text-emerald-700">{summary?.sent30d || 0}</div>
               </div>
-              <div className="rounded-lg border bg-background p-3">
+              <div className="flex min-w-0 flex-col rounded-lg border bg-card p-3">
                 <div className="text-xs text-slate-500">Failed</div>
                 <div className="mt-1 text-xl font-bold text-red-700">{summary?.failed30d || 0}</div>
               </div>
-              <div className="rounded-lg border bg-background p-3">
+              <div className="flex min-w-0 flex-col rounded-lg border bg-card p-3">
                 <div className="text-xs text-slate-500">Delivery Rate</div>
                 <div className="mt-1 text-xl font-bold text-slate-900">{Number(summary?.deliveryRate30d || 0).toFixed(1)}%</div>
               </div>
-              <div className="rounded-lg border bg-background p-3">
+              <div className="flex min-w-0 flex-col rounded-lg border bg-card p-3">
                 <div className="text-xs text-slate-500">Retry Pending</div>
                 <div className="mt-1 text-xl font-bold text-blue-700">{summary?.retryPending30d || 0}</div>
               </div>
-              <div className="rounded-lg border bg-background p-3">
+              <div className="flex min-w-0 flex-col rounded-lg border bg-card p-3">
                 <div className="text-xs text-slate-500">Retry Exhausted</div>
                 <div className="mt-1 text-xl font-bold text-amber-700">{summary?.retryExhausted30d || 0}</div>
               </div>
@@ -160,7 +154,7 @@ export default function CampaignPerformance() {
           ) : (
             <div className="space-y-2">
               {suppressedContacts.map((c) => (
-                <div key={c.customer_phone} className="flex items-center justify-between rounded-lg border bg-background px-3 py-2.5">
+                <div key={c.customer_phone} className="flex items-center justify-between rounded-lg border bg-card px-3 py-2.5">
                   <div>
                     <div className="font-mono text-sm font-medium text-slate-900">{c.customer_phone}</div>
                     <div className="text-xs text-slate-500">

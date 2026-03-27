@@ -15,6 +15,7 @@ import {
   MessageSquareIcon,
   ChevronRightIcon,
   BriefcaseIcon,
+  Clock,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import api from '../lib/api';
@@ -49,6 +50,7 @@ const NAV_MAIN = [
     items: [
       { to: '/dashboard/operate/services', label: 'Services', icon: BriefcaseIcon },
       { to: '/dashboard/operate/staff', label: 'Staff', icon: UserIcon },
+      { to: '/dashboard/operate/working-hours', label: 'Working hours', icon: Clock },
     ],
   },
   {

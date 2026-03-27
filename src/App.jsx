@@ -17,6 +17,7 @@ import Appointments from "./pages/Appointments";
 import Customers from "./pages/Customers";
 import Services from "./pages/operate/Services";
 import Staff from "./pages/operate/Staff";
+import WorkingHours from "./pages/operate/WorkingHours";
 import CreateCampaign from "./pages/campaigns/Create";
 import CampaignHistory from "./pages/campaigns/History";
 import CampaignPerformance from "./pages/campaigns/Performance";
@@ -147,6 +148,16 @@ export default function App() {
               <ProtectedRoute>
                 <Layout>
                   <Staff />
+                </Layout>
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard/operate/working-hours"
+            element={
+              <ProtectedRoute>
+                <Layout>
+                  <WorkingHours />
                 </Layout>
               </ProtectedRoute>
             }

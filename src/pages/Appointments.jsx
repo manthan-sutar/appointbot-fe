@@ -433,8 +433,8 @@ export default function Appointments() {
           <Button type="button" variant="outline" className="gap-2" onClick={exportCSV} disabled={!rows.length}>
             ⬇️ Export CSV
           </Button>
-          <Button type="button" className="gap-2" onClick={openCreateAppointment}>
-            ➕ Add Appointment
+          <Button type="button" onClick={openCreateAppointment}>
+            Add Appointment
           </Button>
         </div>
       </div>
@@ -525,7 +525,7 @@ export default function Appointments() {
         </Alert>
       )}
 
-      <Card className="overflow-hidden rounded-xl border bg-background shadow-sm">
+      <Card className="overflow-hidden rounded-xl border bg-card shadow-sm">
         {loading ? (
           <div className="flex items-center justify-center gap-3 py-10 text-sm text-muted-foreground">
             <div className="h-2 w-2 animate-pulse rounded-full bg-foreground/40" />
