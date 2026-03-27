@@ -4,6 +4,9 @@ import api from "../lib/api";
 import { cn } from "@/lib/utils";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
+import { Checkbox } from "../components/ui/checkbox";
+import { Switch } from "../components/ui/switch";
+import { Label } from "../components/ui/label";
 import {
   Card,
   CardContent,
@@ -12,11 +15,12 @@ import {
 } from "../components/ui/card";
 import { Badge } from "../components/ui/badge";
 import { Tabs, TabsList, TabsTrigger } from "../components/ui/tabs";
+import { toast } from 'sonner';
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const TABS = ["Business", "Working Hours", "No-show", "WhatsApp"];
-const TAB_QUERY = ["business", "hours", "no-show", "whatsapp"];
-const TAB_FROM_QUERY = { business: 0, hours: 1, "no-show": 2, whatsapp: 3 };
+const TABS = ["Business", "Working Hours", "No-show", "WhatsApp", "Widget"];
+const TAB_QUERY = ["business", "hours", "no-show", "whatsapp", "widget"];
+const TAB_FROM_QUERY = { business: 0, hours: 1, "no-show": 2, whatsapp: 3, widget: 4 };
 
 // Normalize time from API (e.g. "09:00:00" -> "09:00") for time inputs
 function toTimeValue(t) {
@@ -108,6 +112,8 @@ export default function Settings() {
   const [bookNowCampaign, setBookNowCampaign] = useState("spring_launch");
   const [bookNowUtmSource, setBookNowUtmSource] = useState("instagram");
   const [noShowSettings, setNoShowSettings] = useState(null);
+  const [widgetApiKey, setWidgetApiKey] = useState(null);
+  const [widgetEmbedCode, setWidgetEmbedCode] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [toast, setToast] = useState("");
@@ -132,14 +138,17 @@ export default function Settings() {
       api.get("/business/whatsapp"),
       api.get("/business/no-show-settings"),
       api.get("/billing/subscription"),
+      api.get("/business/widget-api-key"),
     ])
-      .then(([b, st, h, wa, ns, sub]) => {
+      .then(([b, st, h, wa, ns, sub, wk]) => {
         setBusiness(b.data.business);
         setStaff(st.data.staff);
         setHours(h.data.hours);
         setWaConfig(wa.data.whatsapp || null);
         setNoShowSettings(ns.data.noShowSettings || null);
         setSubscription(sub.data.subscription || null);
+        setWidgetApiKey(wk.data.apiKey || null);
+        setWidgetEmbedCode(wk.data.embedCode || "");
       })
       .finally(() => setLoading(false));
   }, []);
@@ -310,6 +319,24 @@ export default function Settings() {
       showToast("No-show settings saved!");
     } catch (err) {
       showToast(err.response?.data?.error || "Failed to save no-show settings");
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  // ── Widget API key management ─────────────────────────────────────────────
+  async function regenerateWidgetApiKey() {
+    if (!confirm("This will invalidate your current widget API key. Widgets on external websites will stop working until you update them with the new key. Continue?")) {
+      return;
+    }
+    setSaving(true);
+    try {
+      const { data } = await api.post("/business/widget-api-key/regenerate");
+      setWidgetApiKey(data.apiKey);
+      setWidgetEmbedCode(data.embedCode);
+      showToast("Widget API key regenerated!");
+    } catch (err) {
+      showToast(err.response?.data?.error || "Failed to regenerate API key");
     } finally {
       setSaving(false);
     }
@@ -551,36 +578,45 @@ export default function Settings() {
           </CardHeader>
           <CardContent className="px-4 pb-4 pt-4 sm:px-5">
             <form onSubmit={saveNoShowSettings} className="space-y-4 text-sm">
-              <label className="flex items-center gap-3">
-                <input
-                  type="checkbox"
+              <div className="flex items-center justify-between space-x-2 rounded-lg border p-4">
+                <Label htmlFor="reminder-24h" className="flex-1 cursor-pointer">
+                  <div className="font-medium">Send reminder 24 hours before appointment</div>
+                  <div className="text-xs text-muted-foreground">Automatic SMS/WhatsApp reminder</div>
+                </Label>
+                <Switch
+                  id="reminder-24h"
                   checked={!!noShowSettings?.reminder_24h_enabled}
-                  onChange={(e) =>
-                    setNoShowSettings((prev) => ({ ...prev, reminder_24h_enabled: e.target.checked }))
+                  onCheckedChange={(checked) =>
+                    setNoShowSettings((prev) => ({ ...prev, reminder_24h_enabled: checked }))
                   }
                 />
-                <span>Send reminder 24 hours before appointment</span>
-              </label>
-              <label className="flex items-center gap-3">
-                <input
-                  type="checkbox"
+              </div>
+              <div className="flex items-center justify-between space-x-2 rounded-lg border p-4">
+                <Label htmlFor="reminder-2h" className="flex-1 cursor-pointer">
+                  <div className="font-medium">Send reminder 2 hours before and ask for confirmation</div>
+                  <div className="text-xs text-muted-foreground">Requires customer confirmation</div>
+                </Label>
+                <Switch
+                  id="reminder-2h"
                   checked={!!noShowSettings?.reminder_2h_enabled}
-                  onChange={(e) =>
-                    setNoShowSettings((prev) => ({ ...prev, reminder_2h_enabled: e.target.checked }))
+                  onCheckedChange={(checked) =>
+                    setNoShowSettings((prev) => ({ ...prev, reminder_2h_enabled: checked }))
                   }
                 />
-                <span>Send reminder 2 hours before and ask for confirmation</span>
-              </label>
-              <label className="flex items-center gap-3">
-                <input
-                  type="checkbox"
+              </div>
+              <div className="flex items-center justify-between space-x-2 rounded-lg border p-4">
+                <Label htmlFor="auto-cancel" className="flex-1 cursor-pointer">
+                  <div className="font-medium">Auto-cancel unconfirmed appointments before start</div>
+                  <div className="text-xs text-muted-foreground">Cancels appointments not confirmed by cutoff time</div>
+                </Label>
+                <Switch
+                  id="auto-cancel"
                   checked={!!noShowSettings?.auto_cancel_unconfirmed_enabled}
-                  onChange={(e) =>
-                    setNoShowSettings((prev) => ({ ...prev, auto_cancel_unconfirmed_enabled: e.target.checked }))
+                  onCheckedChange={(checked) =>
+                    setNoShowSettings((prev) => ({ ...prev, auto_cancel_unconfirmed_enabled: checked }))
                   }
                 />
-                <span>Auto-cancel unconfirmed appointments before start</span>
-              </label>
+              </div>
               <div>
                 <label className={labelClass}>Confirmation cutoff (minutes before appointment)</label>
                 <Input

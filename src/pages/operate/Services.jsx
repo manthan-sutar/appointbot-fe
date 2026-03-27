@@ -3,19 +3,20 @@ import api from '../../lib/api';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
 import { PageHeader } from '../../components/shared/PageHeader';
 import { EmptyState } from '../../components/shared/EmptyState';
-import { Toast } from '../../components/shared/Toast';
+import { toast } from 'sonner';
 
 export default function Services() {
   const [services, setServices] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState('');
-
-  function showToast(msg) {
-    setToast(msg);
-    setTimeout(() => setToast(''), 2500);
-  }
 
   useEffect(() => {
     api.get('/business/services')
@@ -31,7 +32,7 @@ export default function Services() {
       });
       setServices((sv) => [...sv, data.service]);
     } catch (err) {
-      showToast(err.response?.data?.error || 'Failed to add service');
+      toast.error(err.response?.data?.error || 'Failed to add service');
     }
   }
 
@@ -44,9 +45,9 @@ export default function Services() {
   async function saveService(svc) {
     try {
       await api.put(`/business/services/${svc.id}`, svc);
-      showToast('Service saved!');
+      toast.success('Service saved!');
     } catch {
-      showToast('Failed to save service');
+      toast.error('Failed to save service');
     }
   }
 
@@ -54,7 +55,7 @@ export default function Services() {
     if (!confirm('Remove this service?')) return;
     await api.delete(`/business/services/${id}`);
     setServices((sv) => sv.filter((s) => s.id !== id));
-    showToast('Service removed');
+    toast.success('Service removed');
   }
 
   const inputClass =

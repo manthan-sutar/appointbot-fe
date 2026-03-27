@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Button } from '../components/ui/button';
+import { Alert, AlertDescription } from '../components/ui/alert';
 import useDashboardData, { copyToClipboard } from './dashboard/useDashboardData';
 import { DashboardHeader, QuickActions } from './dashboard/HeaderSection';
 import { BookingLinkCard, NewBusinessBanner, StatsCards } from './dashboard/OverviewSection';
 import { AppointmentPanels } from './dashboard/AppointmentsSection';
 import { StatCard } from '../components/shared/StatCard';
 import { useAuth } from '../context/AuthContext';
+import { toast } from 'sonner';
 
 export default function Dashboard() {
   const { owner } = useAuth();
@@ -38,8 +40,7 @@ export default function Dashboard() {
   async function copyUrl() {
     const ok = await copyToClipboard(chatUrl);
     if (ok) {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      toast.success('Link copied!');
     }
   }
 
@@ -51,7 +52,7 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center gap-3 px-6 py-20 text-sm text-slate-500">
+      <div className="flex items-center justify-center gap-3 px-6 py-20 text-sm text-muted-foreground">
         <div className="h-2 w-2 animate-pulse rounded-full bg-emerald-500" />
         <span>Loading dashboard...</span>
       </div>
@@ -61,19 +62,20 @@ export default function Dashboard() {
   if (error && !business) {
     return (
       <div className="ab-page max-w-[1100px] space-y-6">
-        <h1 className="text-xl font-bold tracking-tight text-slate-900 sm:text-2xl">Dashboard</h1>
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <span>{error}</span>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className="shrink-0 border-red-300 text-red-800 hover:bg-red-100"
-            onClick={() => loadDashboard()}
-          >
-            Retry
-          </Button>
-        </div>
+        <h1 className="text-xl font-bold tracking-tight text-foreground sm:text-2xl">Dashboard</h1>
+        <Alert variant="destructive">
+          <AlertDescription className="flex items-center justify-between gap-3">
+            <span className="flex-1">{error}</span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => loadDashboard()}
+            >
+              Retry
+            </Button>
+          </AlertDescription>
+        </Alert>
       </div>
     );
   }

@@ -5,17 +5,11 @@ import { Input } from '../../components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { PageHeader } from '../../components/shared/PageHeader';
 import { EmptyState } from '../../components/shared/EmptyState';
-import { Toast } from '../../components/shared/Toast';
+import { toast } from 'sonner';
 
 export default function Staff() {
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [toast, setToast] = useState('');
-
-  function showToast(msg) {
-    setToast(msg);
-    setTimeout(() => setToast(''), 2500);
-  }
 
   useEffect(() => {
     api.get('/business/staff')
@@ -30,16 +24,16 @@ export default function Staff() {
       });
       setStaff((st) => [...st, data.staff]);
     } catch (err) {
-      showToast(err.response?.data?.error || 'Failed to add staff');
+      toast.error(err.response?.data?.error || 'Failed to add staff');
     }
   }
 
   async function saveStaffMember(member) {
     try {
       await api.put(`/business/staff/${member.id}`, member);
-      showToast('Staff saved!');
+      toast.success('Staff saved!');
     } catch {
-      showToast('Failed to save staff');
+      toast.error('Failed to save staff');
     }
   }
 
@@ -47,7 +41,7 @@ export default function Staff() {
     if (!confirm('Remove this staff member?')) return;
     await api.delete(`/business/staff/${id}`);
     setStaff((st) => st.filter((s) => s.id !== id));
-    showToast('Staff removed');
+    toast.success('Staff removed');
   }
 
   return (

@@ -2,14 +2,23 @@ import { useEffect, useState } from 'react';
 import api from '../../lib/api';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
+import { Textarea } from '../../components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
+import { Badge } from '../../components/ui/badge';
+import { toast } from 'sonner';
 
 export default function CampaignTemplates() {
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const [toast, setToast] = useState('');
   const [editingId, setEditingId] = useState(null);
 
   const [name, setName] = useState('');
@@ -21,11 +30,6 @@ export default function CampaignTemplates() {
   const [contentMediaUrl, setContentMediaUrl] = useState('');
   const [variableCount, setVariableCount] = useState(0);
   const [variableLabels, setVariableLabels] = useState([]);
-
-  function showToast(msg) {
-    setToast(msg);
-    setTimeout(() => setToast(''), 2500);
-  }
 
   async function loadTemplates() {
     setLoading(true);
@@ -73,11 +77,11 @@ export default function CampaignTemplates() {
   async function saveTemplate(e) {
     e.preventDefault();
     if (!name.trim()) {
-      showToast('Template name is required.');
+      toast.success('Template name is required.');
       return;
     }
     if (sendMode === 'template' && !metaTemplateName.trim()) {
-      showToast('Meta template name is required for template mode.');
+      toast.success('Meta template name is required for template mode.');
       return;
     }
     setSaving(true);
@@ -96,16 +100,16 @@ export default function CampaignTemplates() {
 
       if (editingId) {
         await api.put(`/business/campaign-templates/${editingId}`, payload);
-        showToast('Template updated!');
+        toast.success('Template updated!');
       } else {
         await api.post('/business/campaign-templates', payload);
-        showToast('Template created!');
+        toast.success('Template created!');
       }
 
       resetForm();
       await loadTemplates();
     } catch (err) {
-      showToast(err.response?.data?.error || 'Failed to save template');
+      toast.success(err.response?.data?.error || 'Failed to save template');
     } finally {
       setSaving(false);
     }
@@ -115,10 +119,10 @@ export default function CampaignTemplates() {
     if (!confirm('Delete this template?')) return;
     try {
       await api.delete(`/business/campaign-templates/${id}`);
-      showToast('Template deleted');
+      toast.success('Template deleted');
       await loadTemplates();
     } catch (err) {
-      showToast(err.response?.data?.error || 'Failed to delete template');
+      toast.success(err.response?.data?.error || 'Failed to delete template');
     }
   }
 

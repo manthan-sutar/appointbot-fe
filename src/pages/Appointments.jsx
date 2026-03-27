@@ -645,169 +645,138 @@ export default function Appointments() {
         )}
       </Card>
 
-      {rescheduleTarget && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={closeReschedule}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div
-            className="w-full max-w-lg rounded-xl bg-white p-4 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-3 flex items-start justify-between gap-3">
+      <Dialog open={!!rescheduleTarget} onOpenChange={(open) => !open && closeReschedule()}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Reschedule Appointment</DialogTitle>
+            <DialogDescription>Ref #{rescheduleTarget?.id}</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
               <div>
-                <div className="text-sm font-semibold text-slate-900">Reschedule Appointment</div>
-                <div className="mt-0.5 text-xs text-slate-500">Ref #{rescheduleTarget.id}</div>
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                  New Date
+                </label>
+                <Input
+                  type="date"
+                  value={reschedDate}
+                  onChange={(e) => setReschedDate(e.target.value)}
+                />
               </div>
-              <Button type="button" variant="outline" size="sm" onClick={closeReschedule}>
-                Close
-              </Button>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                  New Time
+                </label>
+                <Input
+                  type="time"
+                  step={1800}
+                  value={reschedTime}
+                  onChange={(e) => setReschedTime(e.target.value)}
+                />
+              </div>
             </div>
 
-            <div className="space-y-3">
-              <div className="flex flex-wrap items-end gap-3">
-                <div className="flex-1 min-w-[180px]">
-                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    New Date
-                  </label>
-                  <input
-                    type="date"
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
-                    value={reschedDate}
-                    onChange={(e) => setReschedDate(e.target.value)}
-                  />
-                </div>
-                <div className="flex-1 min-w-[140px]">
-                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    New Time
-                  </label>
-                  <input
-                    type="time"
-                    step={1800}
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
-                    value={reschedTime}
-                    onChange={(e) => setReschedTime(e.target.value)}
-                  />
-                </div>
+            <div>
+              <div className="mb-2 text-xs font-medium text-muted-foreground">
+                Suggested slots
               </div>
-
-              <div>
-                <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Suggested slots
+              {slotsLoading ? (
+                <div className="text-sm text-muted-foreground">Loading slots…</div>
+              ) : suggestedSlots.length ? (
+                <div className="flex flex-wrap gap-2">
+                  {suggestedSlots.map((t) => (
+                    <Button
+                      key={t}
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setReschedTime(t)}
+                    >
+                      {t}
+                    </Button>
+                  ))}
                 </div>
-                {slotsLoading ? (
-                  <div className="text-sm text-slate-500">Loading slots…</div>
-                ) : suggestedSlots.length ? (
-                  <div className="flex flex-wrap gap-2">
-                    {suggestedSlots.map((t) => (
-                      <Button
-                        key={t}
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="h-8 px-2 text-[12px] text-slate-700 hover:bg-slate-50"
-                        onClick={() => setReschedTime(t)}
-                      >
-                        {t}
-                      </Button>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-sm text-slate-500">
-                    No open slots found for this date. You can still try manual entry.
-                  </div>
-                )}
-              </div>
-
-              {reschedError && (
-                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                  {reschedError}
+              ) : (
+                <div className="text-sm text-muted-foreground">
+                  No open slots found for this date. You can still try manual entry.
                 </div>
               )}
-
-              <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={closeReschedule}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  className="bg-emerald-600 font-semibold text-white hover:bg-emerald-700"
-                  onClick={submitReschedule}
-                  disabled={reschedSubmitting || !reschedDate || !reschedTime}
-                >
-                  {reschedSubmitting ? 'Saving…' : 'Reschedule'}
-                </Button>
-              </div>
             </div>
+
+            {reschedError && (
+              <Alert variant="destructive">
+                <AlertDescription>{reschedError}</AlertDescription>
+              </Alert>
+            )}
           </div>
-        </div>
-      )}
 
-      {customerDrawerOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={closeCustomerDrawer}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div
-            className="w-full max-w-2xl rounded-xl bg-white p-4 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <div>
-                <div className="text-sm font-semibold text-slate-900">Customer CRM</div>
-                <div className="mt-0.5 text-xs text-slate-500">{selectedCustomerPhone}</div>
-              </div>
-              <Button type="button" variant="outline" size="sm" onClick={closeCustomerDrawer}>
-                Close
-              </Button>
-            </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={closeReschedule}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={submitReschedule}
+              disabled={reschedSubmitting || !reschedDate || !reschedTime}
+            >
+              {reschedSubmitting ? 'Rescheduling…' : 'Reschedule'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-            {customerDrawerLoading ? (
-              <div className="py-8 text-sm text-slate-500">Loading customer details...</div>
-            ) : (
+      <Dialog open={customerDrawerOpen} onOpenChange={(open) => !open && closeCustomerDrawer()}>
+        <DialogContent className="max-w-2xl max-h-[80vh]">
+          <DialogHeader>
+            <DialogTitle>Customer CRM</DialogTitle>
+            <DialogDescription className="font-mono text-xs">{selectedCustomerPhone}</DialogDescription>
+          </DialogHeader>
+
+          {customerDrawerLoading ? (
+            <div className="py-8 text-sm text-muted-foreground">Loading customer details...</div>
+          ) : (
+            <ScrollArea className="max-h-[60vh] pr-4">
               <div className="space-y-4">
                 {customerDrawerError && (
-                  <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                    {customerDrawerError}
-                  </div>
+                  <Alert variant="destructive">
+                    <AlertDescription>{customerDrawerError}</AlertDescription>
+                  </Alert>
                 )}
 
                 {customerProfile && (
-                  <div className="grid grid-cols-2 gap-3 rounded-lg border border-slate-200 p-3 text-sm sm:grid-cols-4">
-                    <div>
-                      <div className="text-xs text-slate-500">Name</div>
-                      <div className="font-medium text-slate-900">{customerProfile.customer_name || '—'}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-slate-500">Last Visit</div>
-                      <div className="font-medium text-slate-900">
-                        {customerProfile.last_visit_at ? formatDateTime(customerProfile.last_visit_at, businessTz).date : '—'}
+                  <Card>
+                    <CardContent className="grid grid-cols-2 gap-4 p-4 sm:grid-cols-4">
+                      <div>
+                        <div className="text-xs text-muted-foreground">Name</div>
+                        <div className="font-medium">{customerProfile.customer_name || '—'}</div>
                       </div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-slate-500">Completed Visits</div>
-                      <div className="font-medium text-slate-900">{customerProfile.completed_visits || 0}</div>
-                    </div>
-                    <div>
-                      <div className="text-xs text-slate-500">Total Spend</div>
-                      <div className="font-medium text-slate-900">₹{Math.round(Number(customerProfile.total_spend || 0))}</div>
-                    </div>
-                  </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Last Visit</div>
+                        <div className="font-medium">
+                          {customerProfile.last_visit_at ? formatDateTime(customerProfile.last_visit_at, businessTz).date : '—'}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Completed Visits</div>
+                        <div className="font-medium">{customerProfile.completed_visits || 0}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-muted-foreground">Total Spend</div>
+                        <div className="font-medium">₹{Math.round(Number(customerProfile.total_spend || 0))}</div>
+                      </div>
+                    </CardContent>
+                  </Card>
                 )}
 
                 <div>
-                  <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Add Note</div>
+                  <div className="mb-2 text-xs font-medium text-muted-foreground">Add Note</div>
                   <div className="flex gap-2">
-                    <input
-                      className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none"
+                    <Input
                       value={customerNoteInput}
                       onChange={(e) => setCustomerNoteInput(e.target.value)}
                       placeholder="Example: Prefers evening slots, confirm by WhatsApp."
@@ -820,203 +789,198 @@ export default function Appointments() {
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Recent Notes</div>
-                    <div className="max-h-56 space-y-2 overflow-auto rounded-lg border border-slate-200 p-2">
-                      {customerNotes.length ? customerNotes.map((n) => (
-                        <div key={n.id} className="rounded border border-slate-100 bg-slate-50 px-2 py-2 text-xs">
-                          <div className="text-slate-700">{n.note}</div>
-                          <div className="mt-1 text-[11px] text-slate-500">{new Date(n.created_at).toLocaleString('en-IN')}</div>
-                        </div>
-                      )) : <div className="text-xs text-slate-500">No notes yet.</div>}
-                    </div>
+                    <div className="mb-2 text-xs font-medium text-muted-foreground">Recent Notes</div>
+                    <ScrollArea className="h-56 rounded-lg border">
+                      <div className="p-2 space-y-2">
+                        {customerNotes.length ? customerNotes.map((n) => (
+                          <Card key={n.id}>
+                            <CardContent className="p-3">
+                              <div className="text-xs text-foreground">{n.note}</div>
+                              <div className="mt-1 text-[11px] text-muted-foreground">{new Date(n.created_at).toLocaleString('en-IN')}</div>
+                            </CardContent>
+                          </Card>
+                        )) : <div className="text-xs text-muted-foreground p-2">No notes yet.</div>}
+                      </div>
+                    </ScrollArea>
                   </div>
                   <div>
-                    <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Recent Appointments</div>
-                    <div className="max-h-56 space-y-2 overflow-auto rounded-lg border border-slate-200 p-2">
-                      {customerHistory.length ? customerHistory.map((a) => {
-                        const dt = formatDateTime(a.scheduled_at, businessTz);
-                        return (
-                          <div key={a.id} className="rounded border border-slate-100 bg-slate-50 px-2 py-2 text-xs">
-                            <div className="font-medium text-slate-800">{a.service_name || 'Service'}</div>
-                            <div className="text-slate-600">{dt.date} • {dt.time}</div>
-                            <div className="mt-1 text-[11px] uppercase tracking-wide text-slate-500">{a.status}</div>
-                          </div>
-                        );
-                      }) : <div className="text-xs text-slate-500">No appointment history.</div>}
-                    </div>
+                    <div className="mb-2 text-xs font-medium text-muted-foreground">Recent Appointments</div>
+                    <ScrollArea className="h-56 rounded-lg border">
+                      <div className="p-2 space-y-2">
+                        {customerHistory.length ? customerHistory.map((a) => {
+                          const dt = formatDateTime(a.scheduled_at, businessTz);
+                          return (
+                            <Card key={a.id}>
+                              <CardContent className="p-3">
+                                <div className="font-medium text-sm">{a.service_name || 'Service'}</div>
+                                <div className="text-xs text-muted-foreground">{dt.date} • {dt.time}</div>
+                                <Badge variant="secondary" className="mt-1 text-[10px] uppercase">
+                                  {a.status}
+                                </Badge>
+                              </CardContent>
+                            </Card>
+                          );
+                        }) : <div className="text-xs text-muted-foreground p-2">No appointment history.</div>}
+                      </div>
+                    </ScrollArea>
                   </div>
+                </div>
+              </div>
+            </ScrollArea>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={createOpen} onOpenChange={(open) => !open && closeCreateAppointment()}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Manual Appointment Booking</DialogTitle>
+            <DialogDescription>Creates a confirmed record using availability rules.</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                  Service
+                </label>
+                <Select value={createServiceId} onValueChange={setCreateServiceId}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {servicesList.map((s) => (
+                      <SelectItem key={s.id} value={String(s.id)}>
+                        {s.name} ({s.duration_minutes}m)
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                  Staff
+                </label>
+                <Select value={createStaffId} onValueChange={setCreateStaffId}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {staffList.map((st) => (
+                      <SelectItem key={st.id} value={String(st.id)}>
+                        {st.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                  Date
+                </label>
+                <Input
+                  type="date"
+                  value={createDate}
+                  onChange={(e) => setCreateDate(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                  Time
+                </label>
+                <Input
+                  type="time"
+                  step={1800}
+                  value={createTime}
+                  onChange={(e) => setCreateTime(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                Customer phone
+              </label>
+              <Input
+                value={createCustomerPhone}
+                onChange={(e) => setCreateCustomerPhone(e.target.value)}
+                placeholder="+91 98765 43210"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                Customer name (optional)
+              </label>
+              <Input
+                value={createCustomerName}
+                onChange={(e) => setCreateCustomerName(e.target.value)}
+                placeholder="e.g. Rahul"
+              />
+            </div>
+
+            <div>
+              <label className="mb-1.5 block text-xs font-medium text-muted-foreground">
+                Notes (optional)
+              </label>
+              <Textarea
+                className="min-h-[80px]"
+                value={createNotes}
+                onChange={(e) => setCreateNotes(e.target.value)}
+                placeholder="Any special instructions..."
+              />
+            </div>
+
+            {createError && (
+              <Alert variant="destructive">
+                <AlertDescription>{createError}</AlertDescription>
+              </Alert>
+            )}
+
+            {createSuggestedSlots.length > 0 && (
+              <div>
+                <div className="mb-2 text-xs font-medium text-muted-foreground">
+                  Suggested available times
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {createSuggestedSlots.map((t) => (
+                    <Button
+                      key={t}
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setCreateTime(t)}
+                    >
+                      {t}
+                    </Button>
+                  ))}
                 </div>
               </div>
             )}
           </div>
-        </div>
-      )}
 
-      {createOpen && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-          onClick={closeCreateAppointment}
-          role="dialog"
-          aria-modal="true"
-        >
-          <div
-            className="w-full max-w-lg rounded-xl bg-white p-4 shadow-xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="mb-3 flex items-start justify-between gap-3">
-              <div>
-                <div className="text-sm font-semibold text-slate-900">Manual Appointment Booking</div>
-                <div className="mt-0.5 text-xs text-slate-500">Creates a confirmed record using availability rules.</div>
-              </div>
-              <Button type="button" variant="outline" size="sm" onClick={closeCreateAppointment}>
-                Close
-              </Button>
-            </div>
-
-            <div className="space-y-3">
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Service
-                  </label>
-                  <select
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
-                    value={createServiceId}
-                    onChange={(e) => setCreateServiceId(e.target.value)}
-                  >
-                    {servicesList.map((s) => (
-                      <option key={s.id} value={String(s.id)}>
-                        {s.name} ({s.duration_minutes}m)
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Staff
-                  </label>
-                  <select
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
-                    value={createStaffId}
-                    onChange={(e) => setCreateStaffId(e.target.value)}
-                  >
-                    {staffList.map((st) => (
-                      <option key={st.id} value={String(st.id)}>
-                        {st.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Date
-                  </label>
-                  <input
-                    type="date"
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
-                    value={createDate}
-                    onChange={(e) => setCreateDate(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Time
-                  </label>
-                  <input
-                    type="time"
-                    step={1800}
-                    className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
-                    value={createTime}
-                    onChange={(e) => setCreateTime(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Customer phone
-                </label>
-                <input
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
-                  value={createCustomerPhone}
-                  onChange={(e) => setCreateCustomerPhone(e.target.value)}
-                  placeholder="+91 98765 43210"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Customer name (optional)
-                </label>
-                <input
-                  className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
-                  value={createCustomerName}
-                  onChange={(e) => setCreateCustomerName(e.target.value)}
-                  placeholder="e.g. Rahul"
-                />
-              </div>
-
-              <div>
-                <label className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Notes (optional)
-                </label>
-                <textarea
-                  className="min-h-[80px] w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm outline-none"
-                  value={createNotes}
-                  onChange={(e) => setCreateNotes(e.target.value)}
-                  placeholder="Any special instructions..."
-                />
-              </div>
-
-              {createError && (
-                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                  {createError}
-                </div>
-              )}
-
-              {createSuggestedSlots.length > 0 && (
-                <div>
-                  <div className="mb-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                    Suggested available times
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {createSuggestedSlots.map((t) => (
-                      <Button
-                        key={t}
-                        type="button"
-                        size="sm"
-                        variant="outline"
-                        className="h-8 px-2 text-[12px] text-slate-700 hover:bg-slate-50"
-                        onClick={() => setCreateTime(t)}
-                      >
-                        {t}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex flex-wrap items-center justify-end gap-2 pt-2">
-                <Button type="button" variant="outline" onClick={closeCreateAppointment}>
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  className="bg-emerald-600 font-semibold text-white hover:bg-emerald-700"
-                  onClick={submitManualAppointment}
-                  disabled={createSubmitting || !createCustomerPhone}
-                >
-                  {createSubmitting ? 'Saving…' : 'Book Appointment'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={closeCreateAppointment}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={submitCreateAppointment}
+              disabled={createSubmitting || !createServiceId || !createStaffId || !createDate || !createTime || !createCustomerPhone}
+            >
+              {createSubmitting ? 'Creating…' : 'Create Appointment'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

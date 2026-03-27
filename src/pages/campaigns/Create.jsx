@@ -3,9 +3,17 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../lib/api';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
+import { Textarea } from '../../components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../../components/ui/select';
 import { PageHeader } from '../../components/shared/PageHeader';
-import { Toast } from '../../components/shared/Toast';
+import { toast } from 'sonner';
 
 const AUDIENCE_OPTIONS = [
   { value: 'all_leads', label: 'All leads' },
@@ -27,23 +35,18 @@ export default function CreateCampaign() {
   const [scheduledAt, setScheduledAt] = useState('');
   const [message, setMessage] = useState('');
 
-  function showToast(msg) {
-    setToast(msg);
-    setTimeout(() => setToast(''), 2500);
-  }
-
   async function createNewCampaign(e) {
     e.preventDefault();
     if (!name.trim()) {
-      showToast('Campaign name is required.');
+      toast.error('Campaign name is required.');
       return;
     }
     if (sendMode === 'text' && !message.trim()) {
-      showToast('Message is required for text campaigns.');
+      toast.error('Message is required for text campaigns.');
       return;
     }
     if (sendMode === 'template' && !templateName.trim()) {
-      showToast('Template name is required for template campaigns.');
+      toast.error('Template name is required for template campaigns.');
       return;
     }
     setSaving(true);
@@ -57,10 +60,10 @@ export default function CreateCampaign() {
         templateLanguage: templateLanguage.trim() || 'en',
         scheduledAt: scheduledAt || null,
       });
-      showToast('Campaign created!');
+      toast.success('Campaign created!');
       setTimeout(() => navigate('/dashboard/campaigns/history'), 800);
     } catch (err) {
-      showToast(err.response?.data?.error || 'Failed to create campaign');
+      toast.error(err.response?.data?.error || 'Failed to create campaign');
       setSaving(false);
     }
   }

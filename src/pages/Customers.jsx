@@ -1,10 +1,36 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import api from '../lib/api';
-import { Card } from '../components/ui/card';
+import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Badge } from '../components/ui/badge';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '../components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../components/ui/table';
+import { ScrollArea } from '../components/ui/scroll-area';
+import { Textarea } from '../components/ui/textarea';
 import { PageHeader } from '../components/shared/PageHeader';
-import { Toast } from '../components/shared/Toast';
+import { toast } from 'sonner';
 
 function formatDate(iso, tz = 'Asia/Kolkata') {
   if (!iso) return '—';

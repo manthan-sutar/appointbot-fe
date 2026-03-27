@@ -2,10 +2,28 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../../lib/api';
 import { Button } from '../../components/ui/button';
+import { Badge } from '../../components/ui/badge';
 import { Card, CardContent } from '../../components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../../components/ui/dialog';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../components/ui/table';
+import { ScrollArea } from '../../components/ui/scroll-area';
 import { PageHeader } from '../../components/shared/PageHeader';
 import { EmptyState } from '../../components/shared/EmptyState';
-import { Toast } from '../../components/shared/Toast';
+import { toast } from 'sonner';
 
 function statusPillClass(status) {
   if (status === 'completed') return 'bg-emerald-100 text-emerald-700';

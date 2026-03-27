@@ -3,7 +3,17 @@ import { Link } from 'react-router-dom';
 import api from '../../lib/api';
 import { Button } from '../../components/ui/button';
 import { Input } from '../../components/ui/input';
+import { Badge } from '../../components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '../../components/ui/table';
+import { toast } from 'sonner';
 
 export default function CampaignPerformance() {
   const [summary, setSummary] = useState(null);
@@ -13,12 +23,6 @@ export default function CampaignPerformance() {
   const [suppressedUpdatingPhone, setSuppressedUpdatingPhone] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [toast, setToast] = useState('');
-
-  function showToast(msg) {
-    setToast(msg);
-    setTimeout(() => setToast(''), 2500);
-  }
 
   async function loadSummary() {
     setLoading(true);
@@ -41,7 +45,7 @@ export default function CampaignPerformance() {
       });
       setSuppressedContacts(data.contacts || []);
     } catch (err) {
-      showToast(err.response?.data?.error || 'Failed to load suppressed contacts');
+      toast.error(err.response?.data?.error || 'Failed to load suppressed contacts');
     } finally {
       setSuppressedLoading(false);
     }
@@ -57,10 +61,10 @@ export default function CampaignPerformance() {
     setSuppressedUpdatingPhone(phone);
     try {
       await api.put(`/business/messaging-preferences/${encodeURIComponent(phone)}`, { optOut: false });
-      showToast('Contact opted in for campaigns.');
+      toast.error('Contact opted in for campaigns.');
       await loadSuppressedContacts();
     } catch (err) {
-      showToast(err.response?.data?.error || 'Failed to update preference');
+      toast.error(err.response?.data?.error || 'Failed to update preference');
     } finally {
       setSuppressedUpdatingPhone('');
     }
