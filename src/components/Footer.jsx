@@ -10,13 +10,17 @@ export default function Footer() {
             <span className="text-base font-bold tracking-tight text-white">Booklyft</span>
           </div>
           <p className="text-sm leading-relaxed text-slate-500">
-            AI-powered appointment booking<br />on WhatsApp — for every business.
+            AI-powered booking, reminders & campaigns — for every business.
           </p>
         </div>
         <div className="flex flex-1 flex-wrap gap-12">
           <div className="flex min-w-[120px] flex-col gap-2">
             <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-300">Product</div>
             <Link to="/features" className="text-sm text-slate-500 transition-colors hover:text-white">Features</Link>
+            <Link to="/features" className="text-sm text-slate-500 transition-colors hover:text-white">Campaigns</Link>
+            <Link to="/#analytics-glance" className="text-sm text-slate-500 transition-colors hover:text-white">Analytics</Link>
+            <Link to="/#channels" className="text-sm text-slate-500 transition-colors hover:text-white">Website Widget</Link>
+            <Link to="/#channels" className="text-sm text-slate-500 transition-colors hover:text-white">Web Chat</Link>
             <Link to="/pricing" className="text-sm text-slate-500 transition-colors hover:text-white">Pricing</Link>
             <Link to="/dashboard/signup" className="text-sm text-slate-500 transition-colors hover:text-white">Get Started</Link>
           </div>

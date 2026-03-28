@@ -11,9 +11,9 @@ function HomeBillingToggle() {
   const [billing, setBilling] = useState('monthly');
 
   const plans = [
-    { name: 'Free trial', monthly: 0, yearly: 0, desc: '14-day trial. No card.', features: ['50 bookings/month', '2 staff', '3 services', 'WhatsApp bot', 'Email support'], cta: 'Start free trial' },
-    { name: 'Pro', monthly: 999, yearly: 9990, desc: 'For growing businesses.', features: ['500 bookings/month', '10 staff', '20 services', 'WhatsApp bot', 'Priority support'], cta: 'Start Pro Trial', highlight: true },
-    { name: 'Business', monthly: 2499, yearly: 24990, desc: 'For high-volume businesses.', features: ['Unlimited bookings', 'Unlimited staff', 'Dedicated WhatsApp number', 'Analytics', 'Dedicated support'], cta: 'Contact Us' },
+    { name: 'Free trial', monthly: 0, yearly: 0, desc: 'Test it', features: ['50 bookings/month', '2 staff', '3 services', 'WhatsApp bot', 'Email support'], cta: 'Start free trial' },
+    { name: 'Pro', monthly: 999, yearly: 9990, desc: 'Run it', features: ['500 bookings/month', '10 staff members', '20 services', 'WhatsApp + Web Chat + Website Widget', 'Auto reminders & confirmations', 'Dropped lead follow-up automation', 'Basic analytics dashboard', 'Priority support'], cta: 'Start Pro Trial', highlight: true },
+    { name: 'Business', monthly: 2499, yearly: 24990, desc: 'Grow with it', features: ['Unlimited bookings', 'Unlimited staff & services', 'Dedicated WhatsApp number', 'WhatsApp campaigns & audience targeting', 'Advanced analytics (revenue, no-shows, funnels, UTM)', 'Campaign performance tracking & CSV export', 'At-risk customer alerts', 'Dedicated support'], cta: 'Contact Us' },
   ];
 
   return (
@@ -63,6 +63,12 @@ const HERO_CHAT_MESSAGES = [
   { from: 'bot', text: '✅ Done! Haircut on Friday at 5:00 PM. See you then! 💇' },
 ];
 
+/* Second chat demo — "See it in action" (reschedule flow) */
+const SEE_IT_WORK_CHAT_MESSAGES = [
+  { from: 'user', text: 'Can I reschedule my appointment to Saturday morning?' },
+  { from: 'bot', text: 'Of course! I have Saturday at 10:00 AM and 11:30 AM available.\nWhich works for you? 😊' },
+];
+
 /* ─── Main page ──────────────────────────────────────────────────────────── */
 export default function Home() {
   const [heroChatKey, setHeroChatKey] = useState(0);
@@ -80,16 +86,19 @@ export default function Home() {
       <section className="bg-gradient-to-b from-slate-900 to-slate-800 px-6 py-20 md:py-24">
         <div className="ab-hero-inner mx-auto max-w-[1120px]">
           <div className="ab-hero-left">
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-emerald-300">
-              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-              For salons, clinics & small businesses in India
+            <div className="mb-6 inline-flex max-w-full items-center gap-2 rounded-full border border-emerald-400/30 bg-emerald-500/15 px-3.5 py-1.5 text-xs font-semibold tracking-wide text-emerald-300">
+              <span className="h-1.5 w-1.5 flex-shrink-0 rounded-full bg-emerald-500" />
+              <span className="text-left">For salons, clinics & small businesses in India — now with campaigns & lead retargeting</span>
             </div>
             <h1 className="ab-hero-h1 mb-5 text-4xl font-bold leading-tight tracking-tight text-white md:text-5xl">
-              Stop answering booking calls.<br />
-              Let <span className="text-emerald-400">WhatsApp</span> handle it.
+              Book more. Lose fewer. Bring back the rest.
             </h1>
-            <p className="mb-8 max-w-[440px] text-lg leading-relaxed text-slate-400">
-              Customers message; the AI books. No calls, no back-and-forth.
+            <p className="mb-8 max-w-[480px] text-lg leading-relaxed text-slate-400">
+              Customers book on WhatsApp, your website, or web chat.
+              <br />
+              The AI handles it. Reminders go out automatically.
+              <br />
+              Dropped leads get followed up. You just show up.
             </p>
             <div className="mb-6 flex flex-wrap gap-3">
               <Button asChild className="rounded-lg bg-emerald-600 px-7 py-3.5 text-base font-semibold text-white shadow-sm hover:bg-emerald-700">
@@ -99,10 +108,11 @@ export default function Home() {
                 <Link to="#see-it-work">See it in action</Link>
               </Button>
             </div>
-            <div className="flex flex-wrap gap-5 text-[13px] font-medium text-slate-500">
+            <div className="flex max-w-[520px] flex-col gap-2 text-[13px] font-medium text-slate-500 sm:flex-row sm:flex-wrap sm:gap-x-5 sm:gap-y-2">
               <span>✓ No credit card required</span>
               <span>✓ Setup in minutes</span>
               <span>✓ 14-day free trial</span>
+              <span className="sm:basis-full">✓ WhatsApp + Web + Widget — all channels included</span>
             </div>
           </div>
 
@@ -160,8 +170,10 @@ export default function Home() {
       {/* 3. Introduce the Idea */}
       <section className="ab-section bg-slate-50 px-6 py-14 md:py-16">
         <div className="mx-auto max-w-[640px] text-center">
-          <h2 className="mb-4 text-xl font-bold tracking-tight text-slate-900 md:text-2xl">One WhatsApp message. Appointment booked.</h2>
-          <p className="text-sm text-slate-600">Or they ask for slots, services, reschedule — the AI handles the conversation. That's Booklyft.</p>
+          <h2 className="mb-4 text-xl font-bold tracking-tight text-slate-900 md:text-2xl">One message. Any channel. Appointment booked.</h2>
+          <p className="text-sm leading-relaxed text-slate-600">
+            WhatsApp, your website chat, or an embedded widget — the AI handles booking, rescheduling, and cancellations across all channels. That's Booklyft.
+          </p>
         </div>
       </section>
 
@@ -182,10 +194,10 @@ export default function Home() {
               </div>
               <div className="flex min-h-[200px] flex-col gap-2 bg-[#ece5dd] p-3">
                 <div key={heroChatKey} className="flex flex-col gap-2">
-                  {HERO_CHAT_MESSAGES.map((m, i) => (
+                  {SEE_IT_WORK_CHAT_MESSAGES.map((m, i) => (
                     <div
                       key={i}
-                      className={`hero-chat-msg max-w-[85%] rounded-xl px-3 py-2 text-[13px] leading-snug ${m.from === 'user' ? 'ml-auto bg-[#dcf8c6]' : 'bg-white shadow-sm'}`}
+                      className={`hero-chat-msg max-w-[85%] whitespace-pre-line rounded-xl px-3 py-2 text-[13px] leading-snug ${m.from === 'user' ? 'ml-auto bg-[#dcf8c6]' : 'bg-white shadow-sm'}`}
                       style={{ animationDelay: `${0.3 + i * 0.5}s` }}
                     >
                       {m.text}
@@ -202,12 +214,14 @@ export default function Home() {
       <section className="ab-section bg-slate-50 px-6 py-14 md:py-16">
         <div className="mx-auto max-w-[1120px]">
           <h2 className="mb-8 text-xl font-bold tracking-tight text-slate-900 md:text-2xl">What you get</h2>
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[
-              { icon: '📞', title: 'Fewer calls', desc: 'No more "Do you have a slot?" calls.' },
-              { icon: '⏱️', title: 'Less manual work', desc: 'No copying names and times.' },
-              { icon: '🌙', title: 'Bookings after hours', desc: 'They book when you\'re closed.' },
-              { icon: '📅', title: 'One schedule', desc: 'All appointments in one place.' },
+              { icon: '📞', title: 'Fewer calls', desc: 'No more "Do you have a slot?" calls. The AI answers 24/7.' },
+              { icon: '🔁', title: 'Win back dropped leads', desc: 'Someone asked about a slot but never booked? Booklyft follows up automatically.' },
+              { icon: '🌙', title: 'Bookings after hours', desc: "They book when you're closed. You see it in the morning." },
+              { icon: '📢', title: 'Send campaigns on WhatsApp', desc: 'Message all customers, recent visitors, or lost leads — with one click.' },
+              { icon: '📊', title: 'Know your numbers', desc: 'Revenue, no-show rate, repeat customers — updated every day.' },
+              { icon: '📅', title: 'One schedule, every channel', desc: 'WhatsApp, web chat, and website widget — all synced in one calendar.' },
             ].map((b, i) => (
               <Card key={i} className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm">
                 <div className="mb-2 text-2xl">{b.icon}</div>
@@ -215,6 +229,109 @@ export default function Home() {
                 <p className="text-xs text-slate-600">{b.desc}</p>
               </Card>
             ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Channels — works everywhere */}
+      <section id="channels" className="ab-section bg-white px-6 py-14 md:py-16">
+        <div className="mx-auto max-w-[1120px] rounded-2xl border border-indigo-200/70 bg-indigo-50/50 px-5 py-10 shadow-sm md:px-8 md:py-12">
+          <h2 className="mb-3 text-center text-xl font-bold tracking-tight text-slate-900 md:text-2xl">Works everywhere your customers find you</h2>
+          <p className="mx-auto mb-8 max-w-[560px] text-center text-sm leading-relaxed text-slate-600">One platform. Three booking channels. All synced.</p>
+          <div className="grid gap-4 md:grid-cols-3">
+            {[
+              { icon: '💬', title: 'WhatsApp', desc: 'Customers message your WhatsApp number and the AI books instantly. Works with Meta WhatsApp Cloud API. Supports text and voice messages.' },
+              { icon: '🌐', title: 'Web Chat', desc: 'Every business gets a hosted booking page at booklyft.com/chat/yourname. Share the link anywhere — Instagram bio, Google listing, email signature.' },
+              { icon: '🔌', title: 'Website Widget', desc: 'Drop one line of code onto any website. A booking widget appears. No dependencies. No extra setup. Works on any site.' },
+            ].map((c, i) => (
+              <Card key={i} className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm">
+                <div className="mb-2 text-2xl">{c.icon}</div>
+                <h3 className="mb-1 font-semibold text-slate-900">{c.title}</h3>
+                <p className="text-xs leading-relaxed text-slate-600">{c.desc}</p>
+              </Card>
+            ))}
+          </div>
+          <p className="mt-6 text-center text-xs text-slate-500">All channels share the same calendar, staff, and services. No double bookings.</p>
+          <p className="mt-3 text-center">
+            <a href="#features" className="text-xs font-semibold text-slate-600 hover:text-slate-900">See how the widget works →</a>
+          </p>
+        </div>
+      </section>
+
+      {/* Dropped lead follow-up spotlight */}
+      <section className="ab-section bg-slate-50 px-6 py-14 md:py-16">
+        <div className="mx-auto max-w-[1120px] rounded-2xl border-2 border-emerald-400/40 bg-gradient-to-br from-emerald-50/90 to-white px-5 py-10 shadow-md md:px-8 md:py-12">
+          <h2 className="mb-3 text-center text-xl font-bold tracking-tight text-slate-900 md:text-2xl">Dropped a lead? We follow up for you.</h2>
+          <p className="mx-auto mb-10 max-w-[640px] text-center text-sm leading-relaxed text-slate-600">
+            Most businesses lose 40–60% of interested customers who never actually book. Booklyft catches them automatically.
+          </p>
+          <div className="grid gap-10 lg:grid-cols-2 lg:gap-12">
+            <div>
+              <ol className="m-0 list-none space-y-0 p-0">
+                {[
+                  { text: 'Customer asks about a haircut on WhatsApp', emoji: '🟢' },
+                  { text: 'AI responds with available slots', emoji: '💬' },
+                  { text: "Customer goes quiet. Doesn't book.", emoji: '❌' },
+                  { text: '24 hours later — Booklyft sends a follow-up automatically', emoji: '⏱️' },
+                  { text: 'Customer books.', emoji: '✅' },
+                ].map((step, i, arr) => (
+                  <li key={i} className="flex gap-4 pb-8 last:pb-0">
+                    <div className="flex w-8 flex-shrink-0 flex-col items-center">
+                      <div className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-white text-base shadow-sm">{step.emoji}</div>
+                      {i < arr.length - 1 ? <div className="mt-1 w-px flex-1 min-h-[1.25rem] bg-slate-300" aria-hidden /> : null}
+                    </div>
+                    <p className="m-0 pt-1 text-sm leading-relaxed text-slate-700">{step.text}</p>
+                  </li>
+                ))}
+              </ol>
+            </div>
+            <div className="flex flex-col gap-4">
+              {[
+                { icon: '🔁', title: 'Automatic follow-up', body: 'Dropped leads get a personalized WhatsApp message. No action needed from you.' },
+                { icon: '🎯', title: 'Smart audience targeting', body: 'Send campaigns to all leads, converted customers, or only the ones who never booked.' },
+                { icon: '📈', title: 'Track what\'s working', body: 'See how many leads converted, which campaigns performed, and your overall funnel health.' },
+              ].map((card, i) => (
+                <Card key={i} className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm">
+                  <div className="mb-2 text-2xl">{card.icon}</div>
+                  <h3 className="mb-1 text-sm font-semibold text-slate-900">{card.title}</h3>
+                  <p className="text-xs leading-relaxed text-slate-600">{card.body}</p>
+                </Card>
+              ))}
+            </div>
+          </div>
+          <div className="mt-10 text-center">
+            <Button asChild className="rounded-lg border border-slate-200 bg-white px-6 py-2.5 text-sm font-semibold text-slate-900 shadow-sm hover:bg-slate-50">
+              <a href="#pricing">See it in the Pro & Business plans →</a>
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {/* Analytics mock dashboard */}
+      <section id="analytics-glance" className="ab-section bg-white px-6 py-14 md:py-16">
+        <div className="mx-auto max-w-[1120px]">
+          <h2 className="mb-3 text-center text-xl font-bold tracking-tight text-slate-900 md:text-2xl">Finally know if your business is actually growing</h2>
+          <p className="mx-auto mb-8 max-w-[640px] text-center text-sm leading-relaxed text-slate-600">
+            Stop guessing. Know exactly how your business is performing — bookings, revenue, no-shows, and at-risk customers. Updated daily.
+          </p>
+          <div className="rounded-2xl border border-slate-800/80 bg-[#0f172a] p-6 shadow-xl md:p-8">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {[
+                { icon: '📅', label: 'Bookings this month', value: '143' },
+                { icon: '💰', label: 'Revenue this month', value: '₹71,500' },
+                { icon: '🔁', label: 'Repeat customers', value: '68%' },
+                { icon: '❌', label: 'No-show rate', value: '4.2%' },
+                { icon: '⚠️', label: 'At-risk customers', value: '11' },
+                { icon: '📢', label: 'Campaign conversion', value: '22%' },
+              ].map((m, i) => (
+                <div key={i} className="rounded-xl border border-slate-700/80 bg-slate-800/50 p-4">
+                  <div className="mb-2 text-lg">{m.icon}</div>
+                  <div className="mb-1 text-[11px] font-medium uppercase tracking-wide text-slate-400">{m.label}</div>
+                  <div className="text-2xl font-bold tracking-tight text-white">{m.value}</div>
+                </div>
+              ))}
+            </div>
+            <p className="mt-6 text-center text-xs text-slate-500">Available on Pro and Business plans</p>
           </div>
         </div>
       </section>
@@ -243,17 +360,17 @@ export default function Home() {
       </section>
 
       {/* 6. Features */}
-      <section className="ab-section bg-slate-50 px-6 py-14 md:py-16">
+      <section id="features" className="ab-section bg-slate-50 px-6 py-14 md:py-16 scroll-mt-6">
         <div className="mx-auto max-w-[1120px]">
           <h2 className="mb-8 text-xl font-bold tracking-tight text-slate-900 md:text-2xl">Features</h2>
           <div className="ab-feat-grid mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {[
-              { icon: '🤖', title: 'AI understands', desc: '"Haircut tomorrow 5pm" → booked.' },
-              { icon: '💬', title: 'On WhatsApp', desc: 'No new app. They message & book.' },
-              { icon: '🔔', title: 'Auto confirmations', desc: 'Fewer no-shows.' },
-              { icon: '👥', title: 'Staff & services', desc: 'Set who does what, when.' },
-              { icon: '⚡', title: 'Simple dashboard', desc: 'No coding. Just add & go.' },
-              { icon: '🌙', title: '24/7', desc: 'Bookings anytime you\'re closed.' },
+              { icon: '🤖', title: 'AI booking assistant', desc: '"Haircut tomorrow 5pm" → confirmed. Handles booking, rescheduling, and cancellations in natural language.' },
+              { icon: '💬', title: 'WhatsApp + Web + Widget', desc: 'Three channels, one calendar. Customers book where they already are.' },
+              { icon: '🔔', title: 'Smart reminders', desc: '24-hour and 2-hour reminders go out automatically. Unconfirmed appointments cancel themselves.' },
+              { icon: '📢', title: 'WhatsApp campaigns', desc: 'Send targeted messages to all customers, recent visitors, or dropped leads in one click.' },
+              { icon: '📊', title: 'Analytics & insights', desc: 'Revenue, no-show trends, repeat rate, campaign performance — all in one dashboard.' },
+              { icon: '🌙', title: '24/7, fully automated', desc: "Bookings, reminders, follow-ups — running even when you're asleep." },
             ].map((f, i) => (
               <Card key={i} className="rounded-xl border border-slate-200/80 p-5 shadow-sm">
                 <div className="mb-2 text-2xl">{f.icon}</div>
@@ -294,7 +411,7 @@ export default function Home() {
       </section>
 
       {/* 8. Pricing */}
-      <section className="ab-section bg-slate-50 px-6 py-14 md:py-16">
+      <section id="pricing" className="ab-section bg-slate-50 px-6 py-14 md:py-16 scroll-mt-6">
         <div className="mx-auto max-w-[1120px]">
           <h2 className="mb-2 text-xl font-bold tracking-tight text-slate-900 md:text-2xl">Pricing</h2>
           <p className="mb-8 text-sm text-slate-600">No card required. Cancel anytime.</p>
@@ -313,7 +430,7 @@ export default function Home() {
             {[
               { n: '1', icon: '✍️', title: 'Sign up', desc: 'Business name & type. Under 2 min.' },
               { n: '2', icon: '⚙️', title: 'Add services & hours', desc: 'What you offer, when you\'re open.' },
-              { n: '3', icon: '📱', title: 'Connect WhatsApp', desc: 'Customers message & book 24/7.' },
+              { n: '3', icon: '📱', title: 'Connect your channels', desc: 'WhatsApp, web chat, or website widget. Customers book 24/7 from wherever they find you.' },
             ].map((step, i) => (
               <Card key={i} className="rounded-xl border border-slate-200/80 bg-white p-5 shadow-sm">
                 <div className="mb-2 text-xs font-bold text-slate-500">{step.n}</div>
@@ -329,8 +446,8 @@ export default function Home() {
       {/* 10. Final CTA */}
       <section className="bg-gradient-to-br from-slate-900 to-slate-800 px-6 py-16">
         <div className="mx-auto max-w-[560px] text-center">
-          <h2 className="ab-cta-h2 mb-2 text-2xl font-bold tracking-tight text-white md:text-3xl">Start automating your bookings today.</h2>
-          <p className="mb-6 text-sm text-slate-400">14-day free trial. No card.</p>
+          <h2 className="ab-cta-h2 mb-2 text-2xl font-bold tracking-tight text-white md:text-3xl">Start booking, retaining, and growing — automatically.</h2>
+          <p className="mb-6 text-sm text-slate-400">14-day free trial. No card. All channels included from day one.</p>
           <Button asChild className="inline-flex rounded-lg bg-emerald-600 px-9 py-4 text-base font-semibold text-white shadow-sm hover:bg-emerald-700">
             <Link to="/dashboard/signup">Start free trial →</Link>
           </Button>
