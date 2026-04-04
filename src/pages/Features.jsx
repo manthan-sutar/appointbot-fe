@@ -327,7 +327,7 @@ export default function Features() {
             From AI booking to WhatsApp campaigns, automated reminders, and revenue analytics — Booklyft is the complete growth platform for salons, clinics, and small businesses.
           </p>
           <Button asChild className="inline-flex rounded-lg bg-emerald-600 px-8 py-3.5 text-base font-semibold text-white shadow-sm hover:bg-emerald-700">
-            <Link to="/dashboard/signup">Start for Free →</Link>
+            <Link to="/demo">Request Demo →</Link>
           </Button>
         </div>
       </section>
@@ -376,7 +376,7 @@ export default function Features() {
           <p className="mb-8 text-base text-slate-400">Free plan available. No credit card required.</p>
           <div className="flex flex-wrap justify-center gap-3">
             <Button asChild className="rounded-lg bg-emerald-600 px-8 py-3.5 text-base font-semibold text-white shadow-sm hover:bg-emerald-700">
-              <Link to="/dashboard/signup">Try for Free →</Link>
+              <Link to="/demo">Request Demo →</Link>
             </Button>
             <Button asChild variant="outline" className="rounded-lg border-white/30 bg-white/10 px-8 py-3.5 text-base font-semibold text-white hover:bg-white/20">
               <Link to="/pricing">See Pricing</Link>

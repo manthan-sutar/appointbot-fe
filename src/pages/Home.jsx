@@ -11,9 +11,9 @@ function HomeBillingToggle() {
   const [billing, setBilling] = useState('monthly');
 
   const plans = [
-    { name: 'Free trial', monthly: 0, yearly: 0, desc: 'Test it', features: ['50 bookings/month', '2 staff', '3 services', 'WhatsApp bot', 'Email support'], cta: 'Start free trial' },
-    { name: 'Pro', monthly: 999, yearly: 9990, desc: 'Run it', features: ['500 bookings/month', '10 staff members', '20 services', 'WhatsApp + Web Chat + Website Widget', 'Auto reminders & confirmations', 'Dropped lead follow-up automation', 'Basic analytics dashboard', 'Priority support'], cta: 'Start Pro Trial', highlight: true },
-    { name: 'Business', monthly: 2499, yearly: 24990, desc: 'Grow with it', features: ['Unlimited bookings', 'Unlimited staff & services', 'Dedicated WhatsApp number', 'WhatsApp campaigns & audience targeting', 'Advanced analytics (revenue, no-shows, funnels, UTM)', 'Campaign performance tracking & CSV export', 'At-risk customer alerts', 'Dedicated support'], cta: 'Contact Us' },
+    { name: 'Free trial', monthly: 0, yearly: 0, desc: 'Test it', features: ['50 bookings/month', '2 staff', '3 services', 'WhatsApp bot', 'Email support'], cta: 'Request Demo' },
+    { name: 'Pro', monthly: 999, yearly: 9990, desc: 'Run it', features: ['500 bookings/month', '10 staff members', '20 services', 'WhatsApp + Web Chat + Website Widget', 'Auto reminders & confirmations', 'Dropped lead follow-up automation', 'Basic analytics dashboard', 'Priority support'], cta: 'Request Demo', highlight: true },
+    { name: 'Business', monthly: 2499, yearly: 24990, desc: 'Grow with it', features: ['Unlimited bookings', 'Unlimited staff & services', 'Dedicated WhatsApp number', 'WhatsApp campaigns & audience targeting', 'Advanced analytics (revenue, no-shows, funnels, UTM)', 'Campaign performance tracking & CSV export', 'At-risk customer alerts', 'Dedicated support'], cta: 'Request Demo' },
   ];
 
   return (
@@ -46,7 +46,7 @@ function HomeBillingToggle() {
                 {plan.features.map((f, j) => <li key={j} className="flex items-start gap-2"><span className="flex-shrink-0 font-semibold text-emerald-600">✓</span>{f}</li>)}
               </ul>
               <Button asChild className={plan.highlight ? 'mt-auto rounded-lg bg-indigo-600 py-2.5 font-semibold text-white shadow-sm hover:bg-indigo-700' : 'mt-auto rounded-lg bg-slate-100 py-2.5 font-semibold text-slate-900 hover:bg-slate-200'}>
-                <Link to="/dashboard/signup" className="block w-full text-center">{plan.cta}</Link>
+                <Link to="/demo" className="block w-full text-center">{plan.cta}</Link>
               </Button>
             </Card>
           );
@@ -102,17 +102,17 @@ export default function Home() {
             </p>
             <div className="mb-6 flex flex-wrap gap-3">
               <Button asChild className="rounded-lg bg-emerald-600 px-7 py-3.5 text-base font-semibold text-white shadow-sm hover:bg-emerald-700">
-                <Link to="/dashboard/signup">Start free trial →</Link>
+                <Link to="/demo">Request demo →</Link>
               </Button>
               <Button asChild variant="outline" className="rounded-lg border-white/20 bg-white/5 px-7 py-3.5 text-base font-semibold text-white hover:bg-white/10">
                 <Link to="#see-it-work">See it in action</Link>
               </Button>
             </div>
             <div className="flex max-w-[520px] flex-col gap-2 text-[13px] font-medium text-slate-500 sm:flex-row sm:flex-wrap sm:gap-x-5 sm:gap-y-2">
-              <span>✓ No credit card required</span>
-              <span>✓ Setup in minutes</span>
-              <span>✓ 14-day free trial</span>
-              <span className="sm:basis-full">✓ WhatsApp + Web + Widget — all channels included</span>
+              <span>✓ No obligation</span>
+              <span>✓ We set up your workspace</span>
+              <span>✓ Personal walkthrough</span>
+              <span className="sm:basis-full">✓ WhatsApp + Web + Widget — all channels when you go live</span>
             </div>
           </div>
 
@@ -414,7 +414,7 @@ export default function Home() {
       <section id="pricing" className="ab-section bg-slate-50 px-6 py-14 md:py-16 scroll-mt-6">
         <div className="mx-auto max-w-[1120px]">
           <h2 className="mb-2 text-xl font-bold tracking-tight text-slate-900 md:text-2xl">Pricing</h2>
-          <p className="mb-8 text-sm text-slate-600">No card required. Cancel anytime.</p>
+          <p className="mb-8 text-sm text-slate-600">See plans below. Request a demo to get started.</p>
           <HomeBillingToggle />
           <div className="mt-4 text-center">
             <Link to="/pricing" className="text-sm font-semibold text-slate-700 hover:text-slate-900">Compare all plans →</Link>
@@ -428,7 +428,7 @@ export default function Home() {
           <h2 className="mb-8 text-xl font-bold tracking-tight text-slate-900 md:text-2xl">Three steps. You're live.</h2>
           <div className="ab-steps-grid grid gap-4 md:grid-cols-3">
             {[
-              { n: '1', icon: '✍️', title: 'Sign up', desc: 'Business name & type. Under 2 min.' },
+              { n: '1', icon: '✍️', title: 'Request a demo', desc: 'Share your business details — we’ll get in touch.' },
               { n: '2', icon: '⚙️', title: 'Add services & hours', desc: 'What you offer, when you\'re open.' },
               { n: '3', icon: '📱', title: 'Connect your channels', desc: 'WhatsApp, web chat, or website widget. Customers book 24/7 from wherever they find you.' },
             ].map((step, i) => (
@@ -447,9 +447,9 @@ export default function Home() {
       <section className="bg-gradient-to-br from-slate-900 to-slate-800 px-6 py-16">
         <div className="mx-auto max-w-[560px] text-center">
           <h2 className="ab-cta-h2 mb-2 text-2xl font-bold tracking-tight text-white md:text-3xl">Start booking, retaining, and growing — automatically.</h2>
-          <p className="mb-6 text-sm text-slate-400">14-day free trial. No card. All channels included from day one.</p>
+          <p className="mb-6 text-sm text-slate-400">We’ll set up your account and walk you through Booklyft.</p>
           <Button asChild className="inline-flex rounded-lg bg-emerald-600 px-9 py-4 text-base font-semibold text-white shadow-sm hover:bg-emerald-700">
-            <Link to="/dashboard/signup">Start free trial →</Link>
+            <Link to="/demo">Request demo →</Link>
           </Button>
         </div>
       </section>

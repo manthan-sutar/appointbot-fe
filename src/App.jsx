@@ -9,6 +9,7 @@ import Home from "./pages/Home";
 import Features from "./pages/Features";
 import Pricing from "./pages/Pricing";
 import Signup from "./pages/Signup";
+import DemoRequest from "./pages/DemoRequest";
 import Login from "./pages/Login";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
@@ -36,6 +37,7 @@ export default function App() {
           <Route path="/features" element={<Features />} />
           <Route path="/pricing" element={<Pricing />} />
           <Route path="/privacy" element={<Privacy />} />
+          <Route path="/demo" element={<DemoRequest />} />
 
           {/* Auth */}
           <Route path="/dashboard/signup" element={<Signup />} />

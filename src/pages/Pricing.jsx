@@ -254,8 +254,8 @@ export default function Pricing() {
               <span className="font-medium text-slate-600">Recommended for:</span> Individuals testing the platform
             </p>
             <Button asChild variant="outline" className="mb-6 rounded-lg border-slate-300 bg-transparent py-2.5 font-semibold text-slate-700 shadow-none hover:bg-slate-50">
-              <Link to="/dashboard/signup" className="block w-full text-center">
-                Start for Free
+              <Link to="/demo" className="block w-full text-center">
+                Request Demo
               </Link>
             </Button>
             <ul className="flex flex-col gap-2 p-0 [list-style:none]">
@@ -281,8 +281,8 @@ export default function Pricing() {
               <span className="font-medium text-slate-600">Recommended for:</span> Small businesses managing daily appointments
             </p>
             <Button asChild className="mb-6 rounded-lg bg-slate-700 py-2.5 font-semibold text-white shadow-sm hover:bg-slate-800">
-              <Link to="/dashboard/signup" className="block w-full text-center">
-                Start Pro Trial
+              <Link to="/demo" className="block w-full text-center">
+                Request Demo
               </Link>
             </Button>
             <div className="mb-2 text-[11px] font-semibold uppercase tracking-wider text-slate-400">Booking Operations</div>
@@ -323,8 +323,8 @@ export default function Pricing() {
                 <span className="font-medium text-slate-600">Recommended for:</span> Growing businesses serious about retention & revenue
               </p>
               <Button asChild className="mb-6 rounded-lg bg-emerald-600 py-3 text-base font-bold text-white shadow-md hover:bg-emerald-700 md:py-3.5">
-                <Link to="/dashboard/signup" className="block w-full text-center">
-                  Get Business
+                <Link to="/demo" className="block w-full text-center">
+                  Request Demo
                 </Link>
               </Button>
               {businessSections.map((sec) => (
@@ -379,7 +379,7 @@ export default function Pricing() {
           </div>
           <div className="text-center">
             <Button asChild className="rounded-lg bg-emerald-600 px-8 py-3 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700">
-              <Link to="/dashboard/signup">Get Business →</Link>
+              <Link to="/demo">Request Demo →</Link>
             </Button>
           </div>
         </div>
@@ -484,7 +484,7 @@ export default function Pricing() {
             Most businesses upgrade to Business within the first month — not because they have to, but because they can see exactly what they&apos;ve been missing.
           </p>
           <Button asChild className="inline-flex rounded-lg bg-emerald-600 px-9 py-4 text-base font-semibold text-white shadow-sm hover:bg-emerald-700">
-            <Link to="/dashboard/signup">Get Started Free →</Link>
+            <Link to="/demo">Request Demo →</Link>
           </Button>
         </div>
       </section>

@@ -22,11 +22,11 @@ export default function Footer() {
             <Link to="/#channels" className="text-sm text-slate-500 transition-colors hover:text-white">Website Widget</Link>
             <Link to="/#channels" className="text-sm text-slate-500 transition-colors hover:text-white">Web Chat</Link>
             <Link to="/pricing" className="text-sm text-slate-500 transition-colors hover:text-white">Pricing</Link>
-            <Link to="/dashboard/signup" className="text-sm text-slate-500 transition-colors hover:text-white">Get Started</Link>
+            <Link to="/demo" className="text-sm text-slate-500 transition-colors hover:text-white">Request demo</Link>
           </div>
           <div className="flex min-w-[120px] flex-col gap-2">
             <div className="mb-1 text-xs font-semibold uppercase tracking-wider text-slate-300">Account</div>
-            <Link to="/dashboard/signup" className="text-sm text-slate-500 transition-colors hover:text-white">Sign Up</Link>
+            <Link to="/demo" className="text-sm text-slate-500 transition-colors hover:text-white">Request demo</Link>
             <Link to="/dashboard/login" className="text-sm text-slate-500 transition-colors hover:text-white">Sign In</Link>
           </div>
           <div className="flex min-w-[120px] flex-col gap-2">

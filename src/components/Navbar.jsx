@@ -53,8 +53,8 @@ export default function Navbar() {
             asChild
             className="rounded-lg bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-slate-800"
           >
-            <Link to="/dashboard/signup">
-              Try for Free
+            <Link to="/demo">
+              Request demo
             </Link>
           </Button>
         </div>
@@ -97,11 +97,11 @@ export default function Navbar() {
               Sign In
             </Link>
             <Link
-              to="/dashboard/signup"
+              to="/demo"
               onClick={() => setMenuOpen(false)}
               className="mt-1 rounded-lg bg-slate-900 px-4 py-3 text-center text-sm font-semibold text-white"
             >
-              Try for Free →
+              Request demo →
             </Link>
           </div>
         </div>

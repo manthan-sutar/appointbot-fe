@@ -64,7 +64,7 @@ export default function Login() {
         </div>
         <div className="flex items-center gap-2 border-t border-white/10 pt-6">
           <span className="text-sm text-slate-500">Don't have an account?</span>
-          <Link to="/dashboard/signup" className="text-sm font-semibold text-emerald-400 no-underline hover:text-emerald-300">Sign up free →</Link>
+          <Link to="/demo" className="text-sm font-semibold text-emerald-400 no-underline hover:text-emerald-300">Request demo →</Link>
         </div>
       </div>
 
@@ -111,7 +111,7 @@ export default function Login() {
             </form>
 
             <p className="mt-5 text-center text-sm text-muted-foreground">
-              Don't have an account? <Link to="/dashboard/signup" className="font-semibold text-foreground no-underline hover:underline">Sign up free</Link>
+              Need access? <Link to="/demo" className="font-semibold text-foreground no-underline hover:underline">Request a demo</Link>
             </p>
           </CardContent>
         </Card>
