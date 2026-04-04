@@ -7,7 +7,6 @@ import Layout from "./components/Layout";
 
 import Home from "./pages/Home";
 import Features from "./pages/Features";
-import Pricing from "./pages/Pricing";
 import Signup from "./pages/Signup";
 import DemoRequest from "./pages/DemoRequest";
 import Login from "./pages/Login";
@@ -35,9 +34,9 @@ export default function App() {
           {/* Public marketing */}
           <Route path="/" element={<Home />} />
           <Route path="/features" element={<Features />} />
-          <Route path="/pricing" element={<Pricing />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/demo" element={<DemoRequest />} />
+          <Route path="/pricing" element={<Navigate to="/demo" replace />} />
 
           {/* Auth */}
           <Route path="/dashboard/signup" element={<Signup />} />

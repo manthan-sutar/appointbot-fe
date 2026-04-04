@@ -5,57 +5,6 @@ import Footer from '../components/Footer';
 import { Button } from '../components/ui/button';
 import { Card } from '../components/ui/card';
 
-
-/* ─── Home billing toggle + plan cards ──────────────────────────────────── */
-function HomeBillingToggle() {
-  const [billing, setBilling] = useState('monthly');
-
-  const plans = [
-    { name: 'Free trial', monthly: 0, yearly: 0, desc: 'Test it', features: ['50 bookings/month', '2 staff', '3 services', 'WhatsApp bot', 'Email support'], cta: 'Request Demo' },
-    { name: 'Pro', monthly: 999, yearly: 9990, desc: 'Run it', features: ['500 bookings/month', '10 staff members', '20 services', 'WhatsApp + Web Chat + Website Widget', 'Auto reminders & confirmations', 'Dropped lead follow-up automation', 'Basic analytics dashboard', 'Priority support'], cta: 'Request Demo', highlight: true },
-    { name: 'Business', monthly: 2499, yearly: 24990, desc: 'Grow with it', features: ['Unlimited bookings', 'Unlimited staff & services', 'Dedicated WhatsApp number', 'WhatsApp campaigns & audience targeting', 'Advanced analytics (revenue, no-shows, funnels, UTM)', 'Campaign performance tracking & CSV export', 'At-risk customer alerts', 'Dedicated support'], cta: 'Request Demo' },
-  ];
-
-  return (
-    <div>
-      <div className="mb-7 flex flex-wrap items-center gap-4">
-        <div className="flex gap-0.5 rounded-xl border border-slate-200/80 bg-slate-100 p-1.5">
-          <button type="button" className={`rounded-lg px-5 py-2.5 text-sm font-medium transition ${billing === 'monthly' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`} onClick={() => setBilling('monthly')}>Monthly</button>
-          <button type="button" className={`rounded-lg px-5 py-2.5 text-sm font-medium transition ${billing === 'yearly' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-600 hover:text-slate-900'}`} onClick={() => setBilling('yearly')}>
-            Yearly <span className="rounded-md bg-emerald-100 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-800">Save 17%</span>
-          </button>
-        </div>
-        {billing === 'yearly' && <span className="text-sm font-semibold text-emerald-600">🎉 2 months free</span>}
-      </div>
-      <div className="ab-plan-grid mb-6">
-        {plans.map((plan, i) => {
-          const price = plan.monthly === 0 ? 'Free' : billing === 'yearly' ? `₹${plan.yearly.toLocaleString('en-IN')}` : `₹${plan.monthly.toLocaleString('en-IN')}`;
-          const per = plan.monthly === 0 ? '' : billing === 'yearly' ? '/yr' : '/mo';
-          const equiv = billing === 'yearly' && plan.monthly > 0 ? `≈ ₹${Math.round(plan.yearly / 12).toLocaleString('en-IN')}/mo` : null;
-          return (
-            <Card key={i} className={`relative flex min-w-[220px] flex-1 flex-col rounded-2xl border border-slate-200/80 p-6 shadow-sm ${plan.highlight ? 'border-indigo-500 shadow-md shadow-indigo-500/10' : ''}`}>
-              {plan.highlight && <div className="absolute left-1/2 top-[-12px] -translate-x-1/2 whitespace-nowrap rounded-full bg-indigo-600 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-white">Most Popular</div>}
-              <div className="mb-2.5 text-xs font-semibold uppercase tracking-wider text-slate-500">{plan.name}</div>
-              <div className="mb-0.5 flex items-baseline gap-0.5">
-                <span className="text-3xl font-bold text-slate-900">{price}</span>
-                {per && <span className="ml-0.5 text-sm text-slate-500">{per}</span>}
-              </div>
-              {equiv && <div className="mb-1.5 text-xs text-slate-500">{equiv}</div>}
-              <p className="mb-4 text-sm leading-relaxed text-slate-600">{plan.desc}</p>
-              <ul className="mb-5 flex flex-1 flex-col gap-2 p-0 text-sm text-slate-700 [list-style:none]">
-                {plan.features.map((f, j) => <li key={j} className="flex items-start gap-2"><span className="flex-shrink-0 font-semibold text-emerald-600">✓</span>{f}</li>)}
-              </ul>
-              <Button asChild className={plan.highlight ? 'mt-auto rounded-lg bg-indigo-600 py-2.5 font-semibold text-white shadow-sm hover:bg-indigo-700' : 'mt-auto rounded-lg bg-slate-100 py-2.5 font-semibold text-slate-900 hover:bg-slate-200'}>
-                <Link to="/demo" className="block w-full text-center">{plan.cta}</Link>
-              </Button>
-            </Card>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 /* ─── Hero chat messages (loop animation every 5s) ─────────────────────────── */
 const HERO_CHAT_MESSAGES = [
   { from: 'bot', text: '👋 Hi! I\'m the AI booking assistant for Glow Salon. How can I help?' },
@@ -301,7 +250,7 @@ export default function Home() {
           </div>
           <div className="mt-10 text-center">
             <Button asChild className="rounded-lg border border-slate-200 bg-white px-6 py-2.5 text-sm font-semibold text-slate-900 shadow-sm hover:bg-slate-50">
-              <a href="#pricing">See it in the Pro & Business plans →</a>
+              <Link to="/demo">Request a demo →</Link>
             </Button>
           </div>
         </div>
@@ -331,7 +280,7 @@ export default function Home() {
                 </div>
               ))}
             </div>
-            <p className="mt-6 text-center text-xs text-slate-500">Available on Pro and Business plans</p>
+            <p className="mt-6 text-center text-xs text-slate-500">We&apos;ll walk you through what&apos;s included on a demo.</p>
           </div>
         </div>
       </section>
@@ -410,19 +359,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 8. Pricing */}
-      <section id="pricing" className="ab-section bg-slate-50 px-6 py-14 md:py-16 scroll-mt-6">
-        <div className="mx-auto max-w-[1120px]">
-          <h2 className="mb-2 text-xl font-bold tracking-tight text-slate-900 md:text-2xl">Pricing</h2>
-          <p className="mb-8 text-sm text-slate-600">See plans below. Request a demo to get started.</p>
-          <HomeBillingToggle />
-          <div className="mt-4 text-center">
-            <Link to="/pricing" className="text-sm font-semibold text-slate-700 hover:text-slate-900">Compare all plans →</Link>
-          </div>
-        </div>
-      </section>
-
-      {/* 9. Steps */}
+      {/* 8. Steps */}
       <section className="ab-section bg-white px-6 py-14 md:py-16">
         <div className="mx-auto max-w-[1120px]">
           <h2 className="mb-8 text-xl font-bold tracking-tight text-slate-900 md:text-2xl">Three steps. You're live.</h2>
@@ -443,7 +380,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 10. Final CTA */}
+      {/* 9. Final CTA */}
       <section className="bg-gradient-to-br from-slate-900 to-slate-800 px-6 py-16">
         <div className="mx-auto max-w-[560px] text-center">
           <h2 className="ab-cta-h2 mb-2 text-2xl font-bold tracking-tight text-white md:text-3xl">Start booking, retaining, and growing — automatically.</h2>

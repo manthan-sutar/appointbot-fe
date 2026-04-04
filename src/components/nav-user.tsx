@@ -17,7 +17,12 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { Settings2Icon, LogOutIcon, ChevronsUpDown } from "lucide-react"
+import {
+  Settings2Icon,
+  LogOutIcon,
+  ChevronsUpDown,
+  ScrollTextIcon,
+} from "lucide-react"
 import { Link } from "react-router-dom"
 
 export function NavUser({
@@ -84,6 +89,12 @@ export function NavUser({
                 <Link to="/dashboard/settings">
                   <Settings2Icon className="size-4" />
                   Settings
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/dashboard/settings?tab=activity">
+                  <ScrollTextIcon className="size-4" />
+                  Account activity
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuGroup>

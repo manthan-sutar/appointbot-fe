@@ -373,13 +373,13 @@ export default function Features() {
       <section className="bg-gradient-to-br from-slate-900 to-slate-800 px-6 py-20">
         <div className="mx-auto max-w-[600px] text-center">
           <h2 className="mb-3 text-4xl font-bold tracking-tight text-white">Ready to get started?</h2>
-          <p className="mb-8 text-base text-slate-400">Free plan available. No credit card required.</p>
+          <p className="mb-8 text-base text-slate-400">Tell us about your business — we&apos;ll follow up with a walkthrough.</p>
           <div className="flex flex-wrap justify-center gap-3">
             <Button asChild className="rounded-lg bg-emerald-600 px-8 py-3.5 text-base font-semibold text-white shadow-sm hover:bg-emerald-700">
               <Link to="/demo">Request Demo →</Link>
             </Button>
             <Button asChild variant="outline" className="rounded-lg border-white/30 bg-white/10 px-8 py-3.5 text-base font-semibold text-white hover:bg-white/20">
-              <Link to="/pricing">See Pricing</Link>
+              <Link to="/">Back to home</Link>
             </Button>
           </div>
         </div>

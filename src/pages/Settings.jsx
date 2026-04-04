@@ -24,6 +24,14 @@ import {
   DialogTitle,
 } from "../components/ui/dialog";
 import { Separator } from "../components/ui/separator";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../components/ui/table";
 
 function formatBillingDate(iso) {
   if (!iso) return null;
@@ -84,9 +92,48 @@ function getSubscriptionStatusBadge(sub, trialActive, cancelScheduled, isPaidVia
   return { label: String(sub.status), variant: "outline" };
 }
 
-const TABS = ["Business", "No-show", "WhatsApp", "Widget", "Billing"];
-const TAB_QUERY = ["business", "no-show", "whatsapp", "widget", "billing"];
-const TAB_FROM_QUERY = { business: 0, "no-show": 1, whatsapp: 2, widget: 3, billing: 4 };
+const TABS = ["Business", "No-show", "WhatsApp", "Widget", "Billing", "Activity"];
+const TAB_QUERY = ["business", "no-show", "whatsapp", "widget", "billing", "activity"];
+const TAB_FROM_QUERY = {
+  business: 0,
+  "no-show": 1,
+  whatsapp: 2,
+  widget: 3,
+  billing: 4,
+  activity: 5,
+};
+
+const AUDIT_PAGE_SIZE = 25;
+
+/** Labels for `audit_logs.action` — extend as new events are recorded on the API. */
+const AUDIT_ACTION_LABELS = {
+  "auth.login": "Signed in",
+  "auth.logout": "Signed out",
+  "auth.signup": "Account created",
+  "auth.password_reset": "Password reset requested",
+  "auth.password_change": "Password changed",
+  "demo.request": "Demo request",
+  "billing.checkout_started": "Checkout started",
+  "billing.subscription_updated": "Subscription updated",
+  "billing.subscription_canceled": "Subscription canceled",
+  "widget.api_key_created": "Widget API key created",
+  "widget.api_key_rotated": "Widget API key rotated",
+  "whatsapp.connected": "WhatsApp connected",
+  "whatsapp.disconnected": "WhatsApp disconnected",
+};
+
+function formatAuditAction(action) {
+  const a = String(action || "");
+  if (AUDIT_ACTION_LABELS[a]) return AUDIT_ACTION_LABELS[a];
+  return a.replace(/\./g, " · ") || "—";
+}
+
+function truncateMiddle(str, max) {
+  const s = String(str || "");
+  if (s.length <= max) return s;
+  const half = Math.floor((max - 3) / 2);
+  return `${s.slice(0, half)}…${s.slice(-half)}`;
+}
 
 export default function Settings() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -110,6 +157,10 @@ export default function Settings() {
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
   const [cancelImmediate, setCancelImmediate] = useState(false);
   const [cancelSubmitting, setCancelSubmitting] = useState(false);
+  const [auditLogs, setAuditLogs] = useState([]);
+  const [auditTotal, setAuditTotal] = useState(0);
+  const [auditLoading, setAuditLoading] = useState(false);
+  const [auditOffset, setAuditOffset] = useState(0);
 
   useEffect(() => {
     const t = searchParams.get("tab");
@@ -123,6 +174,7 @@ export default function Settings() {
   }, [searchParams, navigate]);
 
   function selectTab(i) {
+    if (i === 5 && tab !== 5) setAuditOffset(0);
     setTab(i);
     setSearchParams({ tab: TAB_QUERY[i] }, { replace: true });
   }
@@ -158,6 +210,34 @@ export default function Settings() {
       }
     }).finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (tab !== 5) return undefined;
+    let cancelled = false;
+    setAuditLoading(true);
+    api
+      .get("/business/audit-logs", {
+        params: { limit: AUDIT_PAGE_SIZE, offset: auditOffset },
+      })
+      .then(({ data }) => {
+        if (cancelled) return;
+        setAuditLogs(data.logs || []);
+        setAuditTotal(typeof data.total === "number" ? data.total : 0);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setAuditLogs([]);
+          setAuditTotal(0);
+          showToast("Could not load activity log");
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setAuditLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [tab, auditOffset]);
 
   // When WhatsApp connect popup signals success, refresh WhatsApp config
   useEffect(() => {
@@ -873,16 +953,21 @@ export default function Settings() {
               <CardTitle className="text-base leading-snug">Current plan</CardTitle>
               <p className="text-xs leading-relaxed text-muted-foreground">
                 View your plan status, next billing date, and cancellation options. To change plans,
-                open{" "}
+                get in touch —{" "}
                 <Link
-                  to="/pricing"
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  to="/demo"
                   className="font-medium text-foreground underline underline-offset-2"
                 >
-                  pricing
-                </Link>
-                .
+                  request a demo
+                </Link>{" "}
+                or contact support. Recent sign-ins and other security events are listed under the{" "}
+                <Link
+                  to="/dashboard/settings?tab=activity"
+                  className="font-medium text-foreground underline underline-offset-2"
+                >
+                  Activity
+                </Link>{" "}
+                tab.
               </p>
             </CardHeader>
             <CardContent className="space-y-6 px-5 pb-6 pt-4 sm:px-6">
@@ -968,16 +1053,14 @@ export default function Settings() {
                     )}
                     {subscription?.status === "canceled" && (
                       <p className="text-sm leading-relaxed text-muted-foreground">
-                        You are on the free tier. Open{" "}
+                        You are on the free tier.{" "}
                         <Link
-                          to="/pricing"
-                          target="_blank"
-                          rel="noopener noreferrer"
+                          to="/demo"
                           className="font-medium text-foreground underline underline-offset-2"
                         >
-                          pricing
+                          Request a demo
                         </Link>{" "}
-                        to subscribe again.
+                        to discuss upgrading again.
                       </p>
                     )}
                   </div>
@@ -1023,6 +1106,105 @@ export default function Settings() {
             </CardContent>
           </Card>
         </div>
+      )}
+
+      {/* ── Activity (audit log) ── */}
+      {tab === 5 && (
+        <Card className="border shadow-sm">
+          <CardHeader className="px-4 py-3 sm:px-5 space-y-1">
+            <CardTitle className="text-base">Account activity</CardTitle>
+            <p className="text-xs text-muted-foreground">
+              Recent sign-ins and other security-related events for your account and workspace. You can
+              bookmark this view:{" "}
+              <code className="rounded bg-muted px-1 py-0.5 text-[11px] text-foreground">
+                /dashboard/settings?tab=activity
+              </code>
+              .
+            </p>
+          </CardHeader>
+          <CardContent className="px-4 pb-4 pt-0 sm:px-5">
+            {auditLoading && !auditLogs.length ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">Loading…</p>
+            ) : auditLogs.length === 0 ? (
+              <p className="py-8 text-center text-sm text-muted-foreground">
+                No activity recorded yet. Events appear after you sign in or when new actions are logged.
+              </p>
+            ) : (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[180px]">When</TableHead>
+                      <TableHead>Event</TableHead>
+                      <TableHead className="hidden md:table-cell">IP</TableHead>
+                      <TableHead className="hidden lg:table-cell max-w-[200px]">Device / browser</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {auditLogs.map((row) => (
+                      <TableRow key={row.id}>
+                        <TableCell className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
+                          {formatBillingDateTime(row.created_at) || "—"}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          <span className="font-medium text-foreground">
+                            {formatAuditAction(row.action)}
+                          </span>
+                          {row.meta && Object.keys(row.meta).length > 0 ? (
+                            <span className="mt-0.5 block text-[11px] text-muted-foreground font-mono">
+                              {truncateMiddle(JSON.stringify(row.meta), 56)}
+                            </span>
+                          ) : null}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell text-xs font-mono text-muted-foreground">
+                          {row.ip_address || "—"}
+                        </TableCell>
+                        <TableCell
+                          className="hidden lg:table-cell max-w-[220px] truncate text-xs text-muted-foreground"
+                          title={row.user_agent || ""}
+                        >
+                          {row.user_agent ? truncateMiddle(row.user_agent, 42) : "—"}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                <div className="mt-4 flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4 text-xs text-muted-foreground">
+                  <span>
+                    {auditTotal > 0
+                      ? `Showing ${auditOffset + 1}–${auditOffset + auditLogs.length} of ${auditTotal}`
+                      : null}
+                  </span>
+                  <div className="flex gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={auditLoading || auditOffset === 0}
+                      onClick={() =>
+                        setAuditOffset((o) => Math.max(0, o - AUDIT_PAGE_SIZE))
+                      }
+                    >
+                      Newer
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={
+                        auditLoading ||
+                        auditOffset + auditLogs.length >= auditTotal
+                      }
+                      onClick={() => setAuditOffset((o) => o + AUDIT_PAGE_SIZE)}
+                    >
+                      Older
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+          </CardContent>
+        </Card>
       )}
     </div>
   );

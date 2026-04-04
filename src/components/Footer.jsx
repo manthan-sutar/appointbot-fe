@@ -21,7 +21,6 @@ export default function Footer() {
             <Link to="/#analytics-glance" className="text-sm text-slate-500 transition-colors hover:text-white">Analytics</Link>
             <Link to="/#channels" className="text-sm text-slate-500 transition-colors hover:text-white">Website Widget</Link>
             <Link to="/#channels" className="text-sm text-slate-500 transition-colors hover:text-white">Web Chat</Link>
-            <Link to="/pricing" className="text-sm text-slate-500 transition-colors hover:text-white">Pricing</Link>
             <Link to="/demo" className="text-sm text-slate-500 transition-colors hover:text-white">Request demo</Link>
           </div>
           <div className="flex min-w-[120px] flex-col gap-2">
