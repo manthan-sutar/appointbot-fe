@@ -29,6 +29,16 @@ export default function Navbar() {
           >
             Features
           </Link>
+          <Link
+            to="/showcase"
+            className={`rounded-lg px-3.5 py-2 text-sm font-medium transition ${
+              isActive('/showcase')
+                ? 'bg-slate-900 text-white'
+                : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+            }`}
+          >
+            Product tour
+          </Link>
         </div>
 
         {/* Desktop actions */}
@@ -71,6 +81,13 @@ export default function Navbar() {
               className="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
             >
               Features
+            </Link>
+            <Link
+              to="/showcase"
+              onClick={() => setMenuOpen(false)}
+              className="rounded-lg px-3 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-100"
+            >
+              Product tour
             </Link>
             <Link
               to="/dashboard/login"

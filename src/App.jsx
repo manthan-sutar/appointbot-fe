@@ -25,6 +25,7 @@ import CampaignPerformance from "./pages/campaigns/Performance";
 import CampaignTemplates from "./pages/campaigns/Templates";
 import Settings from "./pages/Settings";
 import Privacy from "./pages/Privacy";
+import Showcase from "./pages/Showcase";
 
 export default function App() {
   return (
@@ -35,6 +36,7 @@ export default function App() {
           {/* Public marketing */}
           <Route path="/" element={<Home />} />
           <Route path="/features" element={<Features />} />
+          <Route path="/showcase" element={<Showcase />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/demo" element={<DemoRequest />} />
           <Route path="/pricing" element={<Navigate to="/demo" replace />} />
