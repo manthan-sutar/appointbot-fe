@@ -108,6 +108,7 @@ const AUDIT_PAGE_SIZE = 25;
 /** Labels for `audit_logs.action` — extend as new events are recorded on the API. */
 const AUDIT_ACTION_LABELS = {
   "auth.login": "Signed in",
+  "auth.magic_login": "Signed in via demo link",
   "auth.logout": "Signed out",
   "auth.signup": "Account created",
   "auth.password_reset": "Password reset requested",
@@ -145,6 +146,8 @@ export default function Settings() {
   const [business, setBusiness] = useState(null);
   const [subscription, setSubscription] = useState(null);
   const [waConfig, setWaConfig] = useState(null);
+  const [metaDeveloper, setMetaDeveloper] = useState(null);
+  const [trPhoneDraft, setTrPhoneDraft] = useState("");
   const [bookNowCampaign, setBookNowCampaign] = useState("spring_launch");
   const [bookNowUtmSource, setBookNowUtmSource] = useState("instagram");
   const [noShowSettings, setNoShowSettings] = useState(null);
@@ -194,7 +197,9 @@ export default function Settings() {
         console.warn("[Settings] Failed to load business:", b.reason?.message || b.reason);
       }
       if (wa.status === "fulfilled") {
-        setWaConfig(wa.value?.data?.whatsapp || null);
+        const wd = wa.value?.data;
+        setWaConfig(wd?.whatsapp || null);
+        setMetaDeveloper(wd?.metaDeveloper || null);
       }
       if (ns.status === "fulfilled") {
         setNoShowSettings(ns.value?.data?.noShowSettings || null);
@@ -210,6 +215,11 @@ export default function Settings() {
       }
     }).finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    const p = waConfig?.testRecipientSetup?.phone;
+    setTrPhoneDraft(p != null && p !== "" ? String(p) : "");
+  }, [waConfig?.testRecipientSetup?.phone]);
 
   useEffect(() => {
     if (tab !== 5) return undefined;
@@ -308,6 +318,30 @@ export default function Settings() {
   // Services, staff, and working hours are under Operate in the sidebar.
 
   // ── WhatsApp tab ───────────────────────────────────────────────────────────
+  async function updateWaTestRecipientSetup(partial) {
+    try {
+      const { data } = await api.put(
+        "/business/whatsapp-test-recipient-setup",
+        partial,
+      );
+      setWaConfig((prev) => {
+        const base = prev || {
+          phoneNumberId: null,
+          displayPhone: null,
+          apiVersion: "v21.0",
+          status: "unverified",
+          hasAccessToken: false,
+        };
+        return { ...base, testRecipientSetup: data.testRecipientSetup };
+      });
+      if (data.metaDeveloper) setMetaDeveloper(data.metaDeveloper);
+    } catch (err) {
+      showToast(
+        err.response?.data?.error || "Could not save Meta test checklist",
+      );
+    }
+  }
+
   async function startWaConnect() {
     setSaving(true);
     try {
@@ -783,6 +817,163 @@ export default function Settings() {
                 Click <strong>Connect WhatsApp Business</strong> above. A window will open to link your WhatsApp Business number with the platform — no webhooks or Meta configuration needed. Your number must already be set up as a WhatsApp Business account in Meta.
               </div>
             )}
+
+            {/* ── Meta dev-mode: add test recipient (manual in Meta; checklist here) ── */}
+            {(() => {
+              const trSetup = waConfig?.testRecipientSetup;
+              const trSteps = trSetup?.steps || {};
+              const consoleUrl = metaDeveloper?.whatsappConsoleUrl;
+              return (
+                <div className="space-y-4 rounded-xl border border-amber-500/35 bg-amber-500/[0.06] px-4 py-4 dark:bg-amber-500/10">
+                  <div className="space-y-1">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-amber-900/90 dark:text-amber-200/95">
+                      Development: Meta test recipient numbers
+                    </p>
+                    <p className="text-sm leading-relaxed text-muted-foreground">
+                      While the Meta app is in <strong>Development</strong>, only numbers you add as{" "}
+                      <strong>test recipients</strong> can chat with your WhatsApp Business number. Meta does{" "}
+                      <strong>not</strong> expose an API to register those numbers; you add them (and verify OTP)
+                      in the Meta Developer Console. This checklist is saved for your team — it does not call
+                      Meta on your behalf.
+                    </p>
+                  </div>
+                  <ol className="list-decimal space-y-4 pl-5 text-sm text-foreground marker:font-semibold">
+                    <li className="space-y-2 pl-1">
+                      <span className="font-medium text-foreground">Open your app in Meta</span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {consoleUrl ? (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="secondary"
+                            onClick={() =>
+                              window.open(consoleUrl, "_blank", "noopener,noreferrer")
+                            }
+                          >
+                            Open WhatsApp in Developer Console
+                          </Button>
+                        ) : (
+                          <span className="text-xs text-amber-900/80 dark:text-amber-200/90">
+                            Set <code className="rounded bg-muted px-1 py-0.5 text-[11px]">WHATSAPP_APP_ID</code>{" "}
+                            (or <code className="rounded bg-muted px-1 py-0.5 text-[11px]">WHATSAPP_META_CONSOLE_URL</code>)
+                            on the server for a direct link.
+                          </span>
+                        )}
+                        <a
+                          href="https://developers.facebook.com/apps/"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-medium text-blue-700 underline underline-offset-2 hover:text-blue-800"
+                        >
+                          My Apps
+                        </a>
+                      </div>
+                      <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-transparent bg-background/60 px-2 py-2 hover:bg-background/80">
+                        <Checkbox
+                          checked={!!trSteps.openedConsole}
+                          onCheckedChange={(c) =>
+                            updateWaTestRecipientSetup({
+                              steps: { openedConsole: c === true },
+                            })
+                          }
+                        />
+                        <span className="text-sm leading-snug text-muted-foreground">
+                          I opened <strong className="text-foreground">WhatsApp → API Setup</strong> (or Getting
+                          started) for this app.
+                        </span>
+                      </label>
+                    </li>
+                    <li className="space-y-2 pl-1">
+                      <span className="font-medium text-foreground">
+                        Add the phone you will test from
+                      </span>
+                      <p className="text-xs text-muted-foreground">
+                        Use the same digits you use in WhatsApp, country code included (Meta shows E.164 in many
+                        places). Keep the <strong className="text-foreground">from device</strong> where you
+                        will send test messages — limit (~5 numbers) is enforced by Meta.
+                      </p>
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+                        <div className="min-w-0 flex-1">
+                          <label className={labelClass}>Test phone (digits; optional note for your team)</label>
+                          <Input
+                            value={trPhoneDraft}
+                            onChange={(e) => setTrPhoneDraft(e.target.value)}
+                            placeholder="e.g. 9198xxxxxxxx"
+                            className="font-mono text-sm"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          size="md"
+                          variant="outline"
+                          onClick={() =>
+                            updateWaTestRecipientSetup({
+                              phone: trPhoneDraft.trim() || null,
+                            })
+                          }
+                        >
+                          Save number
+                        </Button>
+                      </div>
+                      <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-transparent bg-background/60 px-2 py-2 hover:bg-background/80">
+                        <Checkbox
+                          checked={!!trSteps.addedNumber}
+                          onCheckedChange={(c) =>
+                            updateWaTestRecipientSetup({
+                              steps: { addedNumber: c === true },
+                            })
+                          }
+                        />
+                        <span className="text-sm leading-snug text-muted-foreground">
+                          I added this number to Meta&apos;s recipient / test list and completed Meta&apos;s
+                          verification step (OTP) if prompted.
+                        </span>
+                      </label>
+                    </li>
+                    <li className="space-y-2 pl-1">
+                      <span className="font-medium text-foreground">Message your business number</span>
+                      <p className="text-xs text-muted-foreground">
+                        From the test phone, open WhatsApp and send a message to your linked business number.
+                        You should see traffic in webhook logs and in this app&apos;s chat flow.
+                      </p>
+                      <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-transparent bg-background/60 px-2 py-2 hover:bg-background/80">
+                        <Checkbox
+                          checked={!!trSteps.verifiedOtp}
+                          onCheckedChange={(c) =>
+                            updateWaTestRecipientSetup({
+                              steps: { verifiedOtp: c === true },
+                            })
+                          }
+                        />
+                        <span className="text-sm leading-snug text-muted-foreground">
+                          Meta finished verifying my test number (no pending OTP).
+                        </span>
+                      </label>
+                      <label className="flex cursor-pointer items-start gap-2 rounded-lg border border-transparent bg-background/60 px-2 py-2 hover:bg-background/80">
+                        <Checkbox
+                          checked={!!trSteps.sentTestMessage}
+                          onCheckedChange={(c) =>
+                            updateWaTestRecipientSetup({
+                              steps: { sentTestMessage: c === true },
+                            })
+                          }
+                        />
+                        <span className="text-sm leading-snug text-muted-foreground">
+                          I sent a test message from my phone and saw the bot respond (or confirmed webhook
+                          delivery).
+                        </span>
+                      </label>
+                    </li>
+                  </ol>
+                  {trSetup?.updatedAt ? (
+                    <p className="text-[11px] text-muted-foreground">
+                      Checklist last updated:{" "}
+                      {formatBillingDateTime(trSetup.updatedAt) || trSetup.updatedAt}
+                    </p>
+                  ) : null}
+                </div>
+              );
+            })()}
 
             {/* ── Meta fee disclosure ── */}
             <div className="flex items-start gap-3 rounded-xl border bg-muted/50 px-4 py-3 text-sm text-foreground">

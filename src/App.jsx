@@ -10,6 +10,7 @@ import Features from "./pages/Features";
 import Signup from "./pages/Signup";
 import DemoRequest from "./pages/DemoRequest";
 import Login from "./pages/Login";
+import MagicLogin from "./pages/MagicLogin";
 import Onboarding from "./pages/Onboarding";
 import Dashboard from "./pages/Dashboard";
 import LeadAnalytics from "./pages/LeadAnalytics";
@@ -41,6 +42,7 @@ export default function App() {
           {/* Auth */}
           <Route path="/dashboard/signup" element={<Signup />} />
           <Route path="/dashboard/login" element={<Login />} />
+          <Route path="/dashboard/magic-login" element={<MagicLogin />} />
 
           {/* Onboarding */}
           <Route
