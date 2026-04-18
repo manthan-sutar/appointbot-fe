@@ -85,7 +85,44 @@ export default {
   			card: '0 1px 3px 0 rgb(0 0 0 / 0.04), 0 1px 2px -1px rgb(0 0 0 / 0.04)',
   			'card-hover': '0 4px 12px -2px rgb(0 0 0 / 0.06), 0 2px 6px -2px rgb(0 0 0 / 0.04)',
   			glow: '0 0 0 1px rgb(0 0 0 / 0.02), 0 2px 8px -2px rgb(0 0 0 / 0.08)'
-  		}
+  		},
+  		keyframes: {
+  			'wa-msg-user-in': {
+  				from: {
+  					opacity: '0',
+  					transform: 'translate3d(10px, 10px, 0) scale(0.96)',
+  				},
+  				to: {
+  					opacity: '1',
+  					transform: 'translate3d(0, 0, 0) scale(1)',
+  				},
+  			},
+  			'wa-msg-bot-in': {
+  				from: {
+  					opacity: '0',
+  					transform: 'translate3d(-10px, 10px, 0) scale(0.96)',
+  				},
+  				to: {
+  					opacity: '1',
+  					transform: 'translate3d(0, 0, 0) scale(1)',
+  				},
+  			},
+  			'wa-typing-in': {
+  				from: {
+  					opacity: '0',
+  					transform: 'translate3d(-6px, 8px, 0) scale(0.94)',
+  				},
+  				to: {
+  					opacity: '1',
+  					transform: 'translate3d(0, 0, 0) scale(1)',
+  				},
+  			},
+  		},
+  		animation: {
+  			'wa-msg-user-in': 'wa-msg-user-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+  			'wa-msg-bot-in': 'wa-msg-bot-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+  			'wa-typing-in': 'wa-typing-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards',
+  		},
   	}
   },
   plugins: [],

@@ -111,48 +111,7 @@ input, textarea, select, button {
   animation: hero-chat-in 0.4s ease-out forwards;
 }
 
-/* WhatsApp showcase bubbles — per-message entrance (ShowcaseWhatsAppDemo) */
-@keyframes wa-msg-user-in {
-  from {
-    opacity: 0;
-    transform: translate3d(10px, 10px, 0) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-}
-@keyframes wa-msg-bot-in {
-  from {
-    opacity: 0;
-    transform: translate3d(-10px, 10px, 0) scale(0.96);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-}
-@keyframes wa-typing-in {
-  from {
-    opacity: 0;
-    transform: translate3d(-6px, 8px, 0) scale(0.94);
-  }
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-}
-.wa-msg-user-in {
-  animation: wa-msg-user-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  transform-origin: bottom right;
-}
-.wa-msg-bot-in {
-  animation: wa-msg-bot-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-  transform-origin: bottom left;
-}
-.wa-typing-in {
-  animation: wa-typing-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
+/* WhatsApp bubble animations: keyframes live in tailwind.config.js (animate-wa-*) */
 
 /* Showcase reel — single-screen tour (smooth for screen recording) */
 @keyframes showcase-scene-in {

@@ -103,6 +103,7 @@ export function ShowcaseWhatsAppDemo({
 }) {
   const rootRef = useRef(null);
   const scrollRef = useRef(null);
+  const messageIdRef = useRef(0);
   const [visible, setVisible] = useState([]);
   const [typing, setTyping] = useState(false);
   const [reduceMotion, setReduceMotion] = useState(false);
@@ -121,13 +122,20 @@ export function ShowcaseWhatsAppDemo({
 
   const runScript = useCallback(() => {
     clearTimers();
+    messageIdRef.current = 0;
     setVisible([]);
     setTyping(false);
 
     const script = playback === "showcase" ? STEPS_SHOWCASE : STEPS_NORMAL;
 
     if (reduceMotion) {
-      const msgs = script.filter((s) => s.kind === "msg");
+      const msgs = script
+        .filter((s) => s.kind === "msg")
+        .map((s) => ({
+          id: ++messageIdRef.current,
+          role: s.role,
+          text: s.text,
+        }));
       setVisible(msgs);
       return;
     }
@@ -163,7 +171,14 @@ export function ShowcaseWhatsAppDemo({
         return;
       }
       if (step.kind === "msg") {
-        setVisible((v) => [...v, { role: step.role, text: step.text }]);
+        setVisible((v) => [
+          ...v,
+          {
+            id: ++messageIdRef.current,
+            role: step.role,
+            text: step.text,
+          },
+        ]);
         push(tick, playback === "showcase" ? 55 : 40);
       }
     };
@@ -251,16 +266,18 @@ export function ShowcaseWhatsAppDemo({
           }}
         >
           <div className="flex min-h-full flex-col justify-end gap-2">
-            {visible.map((m, idx) => (
+            {visible.map((m) => (
               <div
-                key={`${idx}-${m.text.slice(0, 12)}`}
+                key={m.id}
                 className={cn(
                   "max-w-[85%] whitespace-pre-line rounded-xl px-3 py-2 text-[13px] leading-snug shadow-sm",
                   m.role === "user"
                     ? "ml-auto bg-[#dcf8c6] text-slate-900"
                     : "mr-auto bg-white text-slate-900",
                   !reduceMotion &&
-                    (m.role === "user" ? "wa-msg-user-in" : "wa-msg-bot-in")
+                    (m.role === "user"
+                      ? "origin-bottom-right animate-wa-msg-user-in"
+                      : "origin-bottom-left animate-wa-msg-bot-in")
                 )}
               >
                 {m.text.split("\n").map((line, li) => (
@@ -274,8 +291,8 @@ export function ShowcaseWhatsAppDemo({
             {typing ? (
               <div
                 className={cn(
-                  "mr-auto flex items-center rounded-xl bg-white px-3 py-2 shadow-sm",
-                  !reduceMotion && "wa-typing-in"
+                  "mr-auto flex origin-bottom-left items-center rounded-xl bg-white px-3 py-2 shadow-sm",
+                  !reduceMotion && "animate-wa-typing-in"
                 )}
               >
                 <TypingDots />
