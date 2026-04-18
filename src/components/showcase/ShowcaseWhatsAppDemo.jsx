@@ -258,7 +258,9 @@ export function ShowcaseWhatsAppDemo({
                   "max-w-[85%] whitespace-pre-line rounded-xl px-3 py-2 text-[13px] leading-snug shadow-sm",
                   m.role === "user"
                     ? "ml-auto bg-[#dcf8c6] text-slate-900"
-                    : "mr-auto bg-white text-slate-900"
+                    : "mr-auto bg-white text-slate-900",
+                  !reduceMotion &&
+                    (m.role === "user" ? "wa-msg-user-in" : "wa-msg-bot-in")
                 )}
               >
                 {m.text.split("\n").map((line, li) => (
@@ -270,7 +272,12 @@ export function ShowcaseWhatsAppDemo({
               </div>
             ))}
             {typing ? (
-              <div className="mr-auto flex items-center rounded-xl bg-white px-3 py-2 shadow-sm">
+              <div
+                className={cn(
+                  "mr-auto flex items-center rounded-xl bg-white px-3 py-2 shadow-sm",
+                  !reduceMotion && "wa-typing-in"
+                )}
+              >
                 <TypingDots />
               </div>
             ) : null}
