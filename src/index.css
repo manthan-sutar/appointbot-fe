@@ -111,6 +111,34 @@ input, textarea, select, button {
   animation: hero-chat-in 0.4s ease-out forwards;
 }
 
+/* Showcase reel — single-screen tour (smooth for screen recording) */
+@keyframes showcase-scene-in {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.showcase-scene-layer {
+  animation: showcase-scene-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes showcase-progress-fill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+.showcase-progress-fill {
+  transform-origin: left;
+  animation: showcase-progress-fill linear forwards;
+}
+
 /* ─── Onboarding animations ─────────────────────────────────────────────── */
 @keyframes onb-page-in {
   from { opacity: 0; }
