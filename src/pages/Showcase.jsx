@@ -14,12 +14,14 @@ import { cn } from "@/lib/utils";
 import { ShowcaseWhatsAppDemo } from "@/components/showcase/ShowcaseWhatsAppDemo";
 
 const DEFAULT_SCENE_MS = 3000;
+/** Longer so the slower WhatsApp demo can complete at least one full loop. */
+const WHATSAPP_SCENE_MS = 12000;
 
 const SCENES = [
   { id: "intro", label: "Intro", durationMs: DEFAULT_SCENE_MS },
   { id: "problem", label: "Problem", durationMs: DEFAULT_SCENE_MS },
   { id: "solution", label: "Solution", durationMs: DEFAULT_SCENE_MS },
-  { id: "whatsapp", label: "WhatsApp", durationMs: DEFAULT_SCENE_MS },
+  { id: "whatsapp", label: "WhatsApp", durationMs: WHATSAPP_SCENE_MS },
   { id: "reminders", label: "Reminders", durationMs: DEFAULT_SCENE_MS },
   { id: "campaigns", label: "Campaigns", durationMs: DEFAULT_SCENE_MS },
   { id: "dashboard", label: "Dashboard", durationMs: DEFAULT_SCENE_MS },
@@ -217,8 +219,8 @@ export default function Showcase() {
           </div>
           <p className="mt-2 text-center text-[10px] text-slate-500 sm:text-[11px]">
             {reduceMotion
-              ? `Each scene ${DEFAULT_SCENE_MS / 1000}s · tap dots to jump · Space to pause`
-              : `Each scene ${DEFAULT_SCENE_MS / 1000}s · Space to pause · ← → to step · tap dots to jump`}
+              ? `This scene ${Math.round(scene.durationMs / 1000)}s · tap dots to jump · Space to pause`
+              : `This scene ${Math.round(scene.durationMs / 1000)}s · Space to pause · ← → to step · tap dots to jump`}
           </p>
         </div>
       </footer>

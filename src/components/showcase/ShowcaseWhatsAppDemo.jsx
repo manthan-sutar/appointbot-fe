@@ -36,36 +36,37 @@ const STEPS_NORMAL = [
 ];
 
 /**
- * Compressed for the auto-advancing showcase reel (~2.5s one full pass).
+ * Showcase reel: slower than the old “compressed” pass so messages are readable on screen.
+ * (Scene duration in Showcase.jsx should stay long enough for at least one full loop.)
  */
 const STEPS_SHOWCASE = [
   { kind: "msg", role: "user", text: "Hi, need a haircut tomorrow evening" },
-  { kind: "pause", ms: 100 },
-  { kind: "typing", ms: 220 },
+  { kind: "pause", ms: 380 },
+  { kind: "typing", ms: 720 },
   {
     kind: "msg",
     role: "bot",
     text: "Sure — which service?\nCut · Beard trim · Cut + beard",
   },
-  { kind: "pause", ms: 120 },
+  { kind: "pause", ms: 480 },
   { kind: "msg", role: "user", text: "Cut + beard" },
-  { kind: "pause", ms: 90 },
-  { kind: "typing", ms: 200 },
+  { kind: "pause", ms: 400 },
+  { kind: "typing", ms: 680 },
   {
     kind: "msg",
     role: "bot",
     text: "Tuesday open: 4:30pm · 6pm · 7:30pm\nPick one?",
   },
-  { kind: "pause", ms: 120 },
+  { kind: "pause", ms: 480 },
   { kind: "msg", role: "user", text: "6pm" },
-  { kind: "pause", ms: 90 },
-  { kind: "typing", ms: 240 },
+  { kind: "pause", ms: 400 },
+  { kind: "typing", ms: 820 },
   {
     kind: "msg",
     role: "bot",
     text: "Booked ✓ Tue 6pm — Cut + beard at your salon.\nReminder on WhatsApp. See you!",
   },
-  { kind: "pause", ms: 400 },
+  { kind: "pause", ms: 2000 },
 ];
 
 function TypingDots() {
@@ -140,7 +141,7 @@ export function ShowcaseWhatsAppDemo({
     const tick = () => {
       if (i >= script.length) {
         if (playback === "showcase") {
-          push(() => runScript(), 350);
+          push(() => runScript(), 1000);
         } else {
           push(() => runScript(), 800);
         }
@@ -163,7 +164,7 @@ export function ShowcaseWhatsAppDemo({
       }
       if (step.kind === "msg") {
         setVisible((v) => [...v, { role: step.role, text: step.text }]);
-        push(tick, 40);
+        push(tick, playback === "showcase" ? 55 : 40);
       }
     };
 
