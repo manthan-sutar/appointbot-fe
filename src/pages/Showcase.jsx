@@ -6,8 +6,6 @@ import {
   Megaphone,
   LayoutDashboard,
   CheckCircle2,
-  Pause,
-  Play,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -98,36 +96,15 @@ export default function Showcase() {
 
   return (
     <div className="fixed inset-0 z-[70] flex h-[100dvh] flex-col overflow-hidden bg-slate-950 text-slate-100 antialiased">
-      <header className="relative z-20 flex shrink-0 border-b border-white/5 bg-slate-950/80 backdrop-blur-xl">
-        <div
-          className="mx-auto flex h-12 w-full max-w-[1120px] items-center justify-between px-6 pt-[env(safe-area-inset-top,0px)]"
-          style={{ minHeight: "calc(3rem + env(safe-area-inset-top, 0px))" }}
+      <div className="flex shrink-0 justify-end px-4 pt-[max(0.5rem,env(safe-area-inset-top))] pb-2 sm:px-6">
+        <Button
+          asChild
+          size="sm"
+          className="h-9 rounded-full bg-emerald-500 px-5 text-xs font-semibold text-white shadow-lg shadow-emerald-900/30 hover:bg-emerald-400"
         >
-          <Link
-            to="/"
-            className="text-sm font-semibold tracking-tight text-white/90 transition hover:text-white"
-          >
-            ← Booklyft
-          </Link>
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={() => setPaused((p) => !p)}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-white/10 bg-white/5 text-white/90 transition hover:bg-white/10"
-              aria-label={paused ? "Play" : "Pause"}
-            >
-              {paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-            </button>
-            <Button
-              asChild
-              size="sm"
-              className="h-9 rounded-full bg-emerald-500 px-4 text-xs font-semibold text-white shadow-lg shadow-emerald-900/40 hover:bg-emerald-400"
-            >
-              <Link to="/demo">Get demo</Link>
-            </Button>
-          </div>
-        </div>
-      </header>
+          <Link to="/demo">Request demo</Link>
+        </Button>
+      </div>
 
       <div
         className="relative min-h-0 flex-1"
@@ -178,7 +155,7 @@ export default function Showcase() {
       <footer className="relative z-20 shrink-0 border-t border-white/5 bg-slate-950/90 px-6 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 backdrop-blur-xl">
         <div className="mx-auto max-w-[1120px]">
           <div
-            className="mb-3 flex justify-center gap-1.5 sm:gap-2"
+            className="flex justify-center gap-1.5 sm:gap-2"
             role="tablist"
             aria-label="Showcase scenes"
           >
@@ -199,29 +176,6 @@ export default function Showcase() {
               />
             ))}
           </div>
-          <div className="h-1 w-full overflow-hidden rounded-full bg-white/10">
-            <div
-              key={`${index}-${loopGen}`}
-              className={cn(
-                "h-full bg-gradient-to-r from-emerald-500 to-teal-400",
-                !reduceMotion && !paused && "showcase-progress-fill w-full",
-                reduceMotion && "w-full opacity-50"
-              )}
-              style={
-                reduceMotion
-                  ? undefined
-                  : {
-                      animationDuration: `${scene.durationMs}ms`,
-                      animationPlayState: paused ? "paused" : "running",
-                    }
-              }
-            />
-          </div>
-          <p className="mt-2 text-center text-[10px] text-slate-500 sm:text-[11px]">
-            {reduceMotion
-              ? `This scene ${Math.round(scene.durationMs / 1000)}s · tap dots to jump · Space to pause`
-              : `This scene ${Math.round(scene.durationMs / 1000)}s · Space to pause · ← → to step · tap dots to jump`}
-          </p>
         </div>
       </footer>
     </div>
@@ -233,6 +187,12 @@ function SceneBody({ sceneId }) {
     case "intro":
       return (
         <div className="flex w-full max-w-[1120px] flex-col items-start justify-center text-left">
+          <p className="mb-6 text-5xl font-bold tracking-tight sm:mb-7 sm:text-6xl md:text-7xl">
+            <span className="text-white">Book</span>
+            <span className="bg-gradient-to-r from-emerald-300 to-teal-200 bg-clip-text text-transparent">
+              lyft
+            </span>
+          </p>
           <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-emerald-300/90">
             <Sparkles className="h-3.5 w-3.5" />
             Product tour
