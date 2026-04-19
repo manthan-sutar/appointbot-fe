@@ -2,72 +2,109 @@ import { useEffect, useRef, useState, useCallback, useLayoutEffect } from "react
 import { ChevronLeft, MoreVertical, Phone, Video } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/**
- * Full-paced script (marketing / scroll pages).
- */
+/** Mirrors real bot flow: date/time → service list → combo → name → YES → confirmed (short copy). */
 const STEPS_NORMAL = [
-  { kind: "msg", role: "user", text: "Hi, need a haircut tomorrow evening" },
-  { kind: "pause", ms: 450 },
-  { kind: "typing", ms: 1100 },
-  {
-    kind: "msg",
-    role: "bot",
-    text: "Sure — which service?\nCut · Beard trim · Cut + beard",
-  },
-  { kind: "pause", ms: 500 },
-  { kind: "msg", role: "user", text: "Cut + beard" },
-  { kind: "pause", ms: 400 },
+  { kind: "msg", role: "user", text: "Book tomorrow 10am please" },
+  { kind: "pause", ms: 420 },
   { kind: "typing", ms: 1000 },
   {
     kind: "msg",
     role: "bot",
-    text: "Tuesday open: 4:30pm · 6pm · 7:30pm\nPick one?",
+    text:
+      "Which service?\n\n1. Beard trim — 20 min\n2. Facial — 60 min\n3. Hair colour — 90 min\n4. Haircut — 30 min\n\nReply number or name.",
   },
-  { kind: "pause", ms: 500 },
-  { kind: "msg", role: "user", text: "6pm" },
+  { kind: "pause", ms: 520 },
+  { kind: "msg", role: "user", text: "beard trim and facial" },
   { kind: "pause", ms: 400 },
-  { kind: "typing", ms: 1200 },
+  { kind: "typing", ms: 900 },
   {
     kind: "msg",
     role: "bot",
-    text: "Booked ✓ Tue 6pm — Cut + beard at your salon.\nReminder on WhatsApp. See you!",
+    text:
+      "Beard trim, Facial — great!\n\nWhat name should we put the booking under?",
   },
-  { kind: "pause", ms: 3200 },
+  { kind: "pause", ms: 480 },
+  { kind: "msg", role: "user", text: "Manthan sutar" },
+  { kind: "pause", ms: 380 },
+  { kind: "typing", ms: 1100 },
+  {
+    kind: "msg",
+    role: "bot",
+    text:
+      "Please confirm:\nBeard trim, Facial · Priya\nMon 20 Apr · 10:00 AM\nName: Manthan sutar · ₹1,498\n\nReply YES or NO.",
+  },
+  { kind: "pause", ms: 520 },
+  { kind: "msg", role: "user", text: "YES" },
+  { kind: "pause", ms: 380 },
+  { kind: "typing", ms: 1000 },
+  {
+    kind: "msg",
+    role: "bot",
+    text:
+      "✅ Booking confirmed! Ref #24\nMon 20 Apr · 10:00 AM\nReminder ~1h before.\nSee you! 😊",
+  },
+  { kind: "pause", ms: 3000 },
 ];
 
-/**
- * Showcase reel: slower than the old “compressed” pass so messages are readable on screen.
- * (Scene duration in Showcase.jsx should stay long enough for at least one full loop.)
- */
+/** Same story, tuned for the timed reel (slightly tighter gaps). */
 const STEPS_SHOWCASE = [
-  { kind: "msg", role: "user", text: "Hi, need a haircut tomorrow evening" },
-  { kind: "pause", ms: 380 },
+  { kind: "msg", role: "user", text: "Book tomorrow 10am please" },
+  { kind: "pause", ms: 320 },
+  { kind: "typing", ms: 780 },
+  {
+    kind: "msg",
+    role: "bot",
+    text:
+      "Which service?\n\n1. Beard trim — 20 min\n2. Facial — 60 min\n3. Hair colour — 90 min\n4. Haircut — 30 min\n\nReply number or name.",
+  },
+  { kind: "pause", ms: 420 },
+  { kind: "msg", role: "user", text: "beard trim and facial" },
+  { kind: "pause", ms: 320 },
   { kind: "typing", ms: 720 },
   {
     kind: "msg",
     role: "bot",
-    text: "Sure — which service?\nCut · Beard trim · Cut + beard",
+    text:
+      "Beard trim, Facial — great!\n\nWhat name should we put the booking under?",
   },
-  { kind: "pause", ms: 480 },
-  { kind: "msg", role: "user", text: "Cut + beard" },
-  { kind: "pause", ms: 400 },
-  { kind: "typing", ms: 680 },
+  { kind: "pause", ms: 380 },
+  { kind: "msg", role: "user", text: "Manthan sutar" },
+  { kind: "pause", ms: 280 },
+  { kind: "typing", ms: 880 },
   {
     kind: "msg",
     role: "bot",
-    text: "Tuesday open: 4:30pm · 6pm · 7:30pm\nPick one?",
+    text:
+      "Please confirm:\nBeard trim, Facial · Priya\nMon 20 Apr · 10:00 AM\nName: Manthan sutar · ₹1,498\n\nReply YES or NO.",
   },
-  { kind: "pause", ms: 480 },
-  { kind: "msg", role: "user", text: "6pm" },
-  { kind: "pause", ms: 400 },
+  { kind: "pause", ms: 440 },
+  { kind: "msg", role: "user", text: "YES" },
+  { kind: "pause", ms: 280 },
   { kind: "typing", ms: 820 },
   {
     kind: "msg",
     role: "bot",
-    text: "Booked ✓ Tue 6pm — Cut + beard at your salon.\nReminder on WhatsApp. See you!",
+    text:
+      "✅ Booking confirmed! Ref #24\nMon 20 Apr · 10:00 AM\nReminder ~1h before.\nSee you! 😊",
   },
   { kind: "pause", ms: 2000 },
 ];
+
+/** Must match `delayAfterMessageMs` for `playback === "showcase"` in `runScript`. */
+const SHOWCASE_DELAY_AFTER_MSG_MS = 460;
+
+/**
+ * Wall-clock time for one full STEPS_SHOWCASE run until the script completes (before internal loop restart).
+ * Used by the marketing carousel intro slide: duration + post-animation pause → next scene.
+ */
+export function getShowcaseScriptDurationMs() {
+  let t = 0;
+  for (const step of STEPS_SHOWCASE) {
+    if (step.kind === "msg") t += SHOWCASE_DELAY_AFTER_MSG_MS;
+    else if (step.kind === "pause" || step.kind === "typing") t += step.ms;
+  }
+  return t;
+}
 
 function TypingDots() {
   return (
@@ -89,7 +126,6 @@ function TypingDots() {
  * @param {boolean} [props.controlled] - If true, use `active` instead of IntersectionObserver
  * @param {boolean} [props.active] - When controlled: run script while true
  * @param {number} [props.restartKey] - Bump to restart the script (e.g. when scene re-enters)
- * @param {boolean} [props.caption] - Show caption under phone
  * @param {string} [props.chatHeightClass] - Tailwind height for chat area (reel uses shorter)
  */
 export function ShowcaseWhatsAppDemo({
@@ -98,7 +134,6 @@ export function ShowcaseWhatsAppDemo({
   controlled = false,
   active = true,
   restartKey = 0,
-  caption = true,
   chatHeightClass = "h-[min(380px,52vh)]",
 }) {
   const rootRef = useRef(null);
@@ -150,7 +185,8 @@ export function ShowcaseWhatsAppDemo({
     }
 
     /** Wait after each bubble so layout + CSS animation (~420ms) complete before the next step. */
-    const delayAfterMessageMs = playback === "showcase" ? 460 : 48;
+    const delayAfterMessageMs =
+      playback === "showcase" ? SHOWCASE_DELAY_AFTER_MSG_MS : 48;
 
     const push = (fn, ms) => {
       const id = setTimeout(() => {
@@ -255,19 +291,19 @@ export function ShowcaseWhatsAppDemo({
       aria-hidden="true"
     >
       <p className="sr-only">
-        Animated demo of a WhatsApp booking chat: customer asks for a haircut,
-        picks a service and time, and receives a confirmation message.
+        Animated demo: customer asks to book, picks services, gives a name,
+        confirms with YES, and receives a booking confirmation on WhatsApp.
       </p>
       <div className="overflow-hidden rounded-2xl border border-white/15 bg-slate-900/40 shadow-2xl shadow-black/50 ring-1 ring-white/10 backdrop-blur-sm">
         <div className="flex items-center gap-2 bg-[#075e54] px-4 py-3 text-white">
           <ChevronLeft className="h-5 w-5 shrink-0 opacity-90" strokeWidth={2.5} />
           <div className="flex min-w-0 flex-1 items-center gap-2.5">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 text-xs font-bold">
-              GS
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/20 text-[10px] font-bold leading-none">
+              BL
             </div>
             <div className="min-w-0">
-              <div className="truncate text-[15px] font-semibold leading-tight">
-                Glow Salon
+              <div className="truncate text-[14px] font-semibold leading-tight">
+                Booklyft Demo Salon
               </div>
               <div className="text-[11px] text-emerald-100/90">online</div>
             </div>
@@ -292,7 +328,7 @@ export function ShowcaseWhatsAppDemo({
               <div
                 key={m.id}
                 className={cn(
-                  "max-w-[85%] whitespace-pre-line rounded-xl px-3 py-2 text-[13px] leading-snug shadow-sm",
+                  "max-w-[92%] whitespace-pre-line rounded-lg px-2.5 py-1.5 text-[11px] leading-snug shadow-sm",
                   m.role === "user"
                     ? "ml-auto bg-[#dcf8c6] text-slate-900"
                     : "mr-auto bg-white text-slate-900",
@@ -324,11 +360,6 @@ export function ShowcaseWhatsAppDemo({
           </div>
         </div>
       </div>
-      {caption ? (
-        <p className="mt-4 text-center text-xs text-slate-400">
-          Simulated chat — your brand&apos;s tone &amp; services apply.
-        </p>
-      ) : null}
     </div>
   );
 }
