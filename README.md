@@ -16,6 +16,16 @@ npm run dev     # dev server on http://localhost:5173
 npm run build   # production build → dist/
 ```
 
+### Chat and API in local dev
+
+Vite proxies `/api` and `/chat` to **`http://localhost:3000`** (see `vite.config.js`). Run the **backend** in a second terminal or you will see **`http proxy error` … `ECONNREFUSED`** when opening `/chat/...` or calling the API:
+
+```bash
+cd ../appointbot-be && npm run dev
+```
+
+Then use the dashboard at `http://localhost:5173` — chat links resolve via the proxy to the API.
+
 ## Deploy
 Recommended: **Vercel** (connect GitHub repo, zero config needed).
 

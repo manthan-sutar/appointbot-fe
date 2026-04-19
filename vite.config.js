@@ -15,6 +15,8 @@ export default defineConfig({
     proxy: {
       '/api': 'http://localhost:3000',
       '/chat': 'http://localhost:3000',
+      // So any client-side call to /webhook in dev hits Express (chat uses server-side loopback).
+      '/webhook': 'http://localhost:3000',
     },
   },
   build: {

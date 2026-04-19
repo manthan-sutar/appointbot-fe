@@ -12,8 +12,8 @@ import { cn } from "@/lib/utils";
 import { ShowcaseWhatsAppDemo } from "@/components/showcase/ShowcaseWhatsAppDemo";
 
 const DEFAULT_SCENE_MS = 3000;
-/** Longer so the slower WhatsApp demo can complete at least one full loop. */
-const WHATSAPP_SCENE_MS = 12000;
+/** Long enough for sequential bubbles + typing + one full loop before advance. */
+const WHATSAPP_SCENE_MS = 16000;
 
 const SCENES = [
   { id: "intro", label: "Intro", durationMs: DEFAULT_SCENE_MS },
@@ -268,25 +268,28 @@ function SceneBody({ sceneId }) {
       );
     case "whatsapp":
       return (
-        <div className="relative z-10 flex w-full max-w-[1120px] flex-col items-center gap-8 text-center lg:flex-row lg:items-center lg:gap-14 lg:text-left">
+        <div className="relative z-10 flex w-full max-w-[1120px] flex-col items-center gap-8 text-center lg:flex-row lg:items-start lg:gap-14 lg:text-left">
           <div className="max-w-md flex-1">
-            <span className="text-xs font-bold uppercase tracking-widest text-emerald-400/90">
-              Omnichannel
-            </span>
-            <h2 className="mt-3 text-3xl font-bold leading-tight text-white sm:text-4xl">
+            <p className="mb-4 text-4xl font-bold tracking-tight sm:mb-5 sm:text-5xl md:text-6xl">
+              <span className="text-white">Book</span>
+              <span className="bg-gradient-to-r from-emerald-300 to-teal-200 bg-clip-text text-transparent">
+                lyft
+              </span>
+            </p>
+            <h2 className="text-2xl font-bold leading-tight text-white sm:text-3xl">
               Booking on WhatsApp — like production.
             </h2>
-            <p className="mt-4 text-base leading-relaxed text-slate-400">
+            <p className="mt-3 text-base leading-relaxed text-slate-400">
               Service → time slots → confirmation. Same flow your customers get live.
             </p>
           </div>
-          <div className="flex shrink-0 justify-center">
+          <div className="flex w-full shrink-0 justify-center lg:w-auto">
             <ShowcaseWhatsAppDemo
               controlled
               active
               playback="showcase"
               caption
-              chatHeightClass="h-[260px]"
+              chatHeightClass="h-[min(340px,42vh)]"
             />
           </div>
         </div>

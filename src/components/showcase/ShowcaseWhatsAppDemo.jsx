@@ -104,10 +104,18 @@ export function ShowcaseWhatsAppDemo({
   const rootRef = useRef(null);
   const scrollRef = useRef(null);
   const messageIdRef = useRef(0);
+  const runGenRef = useRef(0);
+  const runScriptRef = useRef(() => {});
   const [visible, setVisible] = useState([]);
   const [typing, setTyping] = useState(false);
+  const [typingSeq, setTypingSeq] = useState(0);
   const [reduceMotion, setReduceMotion] = useState(false);
   const timersRef = useRef([]);
+
+  /** Showcase reel should always play one message at a time (never dump all bubbles). */
+  const showAllAtOnce = reduceMotion && playback !== "showcase";
+  /** CSS bubble animations: on for normal; for showcase ignore OS reduced-motion so the demo reads in marketing. */
+  const bubbleAnimate = !reduceMotion || playback === "showcase";
 
   useLayoutEffect(() => {
     const el = scrollRef.current;
@@ -122,13 +130,14 @@ export function ShowcaseWhatsAppDemo({
 
   const runScript = useCallback(() => {
     clearTimers();
+    const gen = ++runGenRef.current;
     messageIdRef.current = 0;
     setVisible([]);
     setTyping(false);
 
     const script = playback === "showcase" ? STEPS_SHOWCASE : STEPS_NORMAL;
 
-    if (reduceMotion) {
+    if (showAllAtOnce) {
       const msgs = script
         .filter((s) => s.kind === "msg")
         .map((s) => ({
@@ -140,18 +149,25 @@ export function ShowcaseWhatsAppDemo({
       return;
     }
 
+    /** Wait after each bubble so layout + CSS animation (~420ms) complete before the next step. */
+    const delayAfterMessageMs = playback === "showcase" ? 460 : 48;
+
     const push = (fn, ms) => {
-      const id = setTimeout(fn, ms);
+      const id = setTimeout(() => {
+        if (gen !== runGenRef.current) return;
+        fn();
+      }, ms);
       timersRef.current.push(id);
     };
 
     let i = 0;
     const tick = () => {
+      if (gen !== runGenRef.current) return;
       if (i >= script.length) {
         if (playback === "showcase") {
-          push(() => runScript(), 1000);
+          push(() => runScriptRef.current(), 1000);
         } else {
-          push(() => runScript(), 800);
+          push(() => runScriptRef.current(), 800);
         }
         return;
       }
@@ -163,8 +179,10 @@ export function ShowcaseWhatsAppDemo({
         return;
       }
       if (step.kind === "typing") {
+        setTypingSeq((s) => s + 1);
         setTyping(true);
         push(() => {
+          if (gen !== runGenRef.current) return;
           setTyping(false);
           tick();
         }, step.ms);
@@ -179,12 +197,16 @@ export function ShowcaseWhatsAppDemo({
             text: step.text,
           },
         ]);
-        push(tick, playback === "showcase" ? 55 : 40);
+        push(tick, delayAfterMessageMs);
       }
     };
 
     tick();
-  }, [clearTimers, reduceMotion, playback]);
+  }, [clearTimers, showAllAtOnce, playback]);
+
+  useEffect(() => {
+    runScriptRef.current = runScript;
+  }, [runScript]);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -274,7 +296,7 @@ export function ShowcaseWhatsAppDemo({
                   m.role === "user"
                     ? "ml-auto bg-[#dcf8c6] text-slate-900"
                     : "mr-auto bg-white text-slate-900",
-                  !reduceMotion &&
+                  bubbleAnimate &&
                     (m.role === "user"
                       ? "origin-bottom-right animate-wa-msg-user-in"
                       : "origin-bottom-left animate-wa-msg-bot-in")
@@ -290,9 +312,10 @@ export function ShowcaseWhatsAppDemo({
             ))}
             {typing ? (
               <div
+                key={`typing-${typingSeq}`}
                 className={cn(
                   "mr-auto flex origin-bottom-left items-center rounded-xl bg-white px-3 py-2 shadow-sm",
-                  !reduceMotion && "animate-wa-typing-in"
+                  bubbleAnimate && "animate-wa-typing-in"
                 )}
               >
                 <TypingDots />
